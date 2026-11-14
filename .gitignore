@@ -1,0 +1,70 @@
+# ============================================================
+# ue5-solo-game-skill 仓库忽略规则
+# 原则：只提交 skill 本体（文档、模板、脚本、测试）；
+#       一切运行产物、本地工程、编辑器缓存都不入库。
+# ============================================================
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# ---------- gamecheck 运行产物与临时目录 ----------
+.gamecheck/
+out/
+sample/
+sample-project/
+tmp/
+tests/_tmp/
+tests/_last_run*.txt
+tests/_last_run*.log
+*.log
+*.tmp
+*.bak
+
+# ---------- IDE / 编辑器 ----------
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# ---------- 操作系统 ----------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+._*
+
+# ---------- 本地 UE 工程产物（游戏项目不要放进本仓库；放进来时也不能提交） ----------
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+.vs/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# ---------- 本地大型素材（用 LFS 或放 art/Export，见发布指南第 9 节） ----------
+*.psd
+*.blend1
+*.fbx.bak
+
+# ---------- 说明 ----------
+# templates/ 下的 *.csv 是模板正文，必须提交，不要在此忽略。
+# 本仓库没有构建产物；build/ 与 Build/ 仅在你误把 UE 工程放进仓库时兜底。
+build/
+Build/

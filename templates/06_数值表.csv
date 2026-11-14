@@ -1,0 +1,16 @@
+﻿category,key,value,unit,formula,source,note
+move,move.jump.height,2.2,m,,01_游戏设计文档,【示例】能跳上2m台留0.2m冗余
+jump,move.jump.apex_time,0.4,s,,01_游戏设计文档,【示例】0.35s太急0.5s太飘
+jump,move.gravity,27.5,m/s^2,g=2*move.jump.height/move.jump.apex_time^2,01_游戏设计文档,【示例】2*2.2/0.4^2；UE填Default Gravity Z=-2750cm/s^2
+jump,move.jump.velocity,11,m/s,v=2*move.jump.height/move.jump.apex_time,01_游戏设计文档,【示例】2*2.2/0.4；UE填JumpZVelocity=1100cm/s
+move,move.run.speed,6,m/s,,01_游戏设计文档,【示例】UE填MaxWalkSpeed=600cm/s
+move,move.air_control,0.6,,,01_游戏设计文档,【示例】0=空中不能转向 1=与地面相同
+move,move.coyote_time,0.1,s,,01_游戏设计文档,【示例】离开平台后仍可起跳
+move,move.jump_buffer,0.1,s,,01_游戏设计文档,【示例】落地前按跳落地即起跳
+camera,camera.fov,75,deg,,01_游戏设计文档,【示例】第三人称常用70-80度
+camera,camera.arm_length,350,cm,,01_游戏设计文档,【示例】SpringArm Target Arm Length
+camera,camera.lag,0.12,s,,01_游戏设计文档,【示例】Camera Lag Speed≈8.3
+combat,combat.player.hp,100,hp,,01_游戏设计文档,【示例】基础血量
+combat,combat.hitstop.light,3,frames,,01_游戏设计文档,【示例】按60fps折算50ms
+combat,combat.hitstop.heavy,6,frames,,01_游戏设计文档,【示例】按60fps折算100ms
+combat,combat.iframes,0.3,s,,01_游戏设计文档,【示例】受击后无敌时间

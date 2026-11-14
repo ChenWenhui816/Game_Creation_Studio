@@ -1,0 +1,3 @@
+﻿id,type,name,usage,source,file,faces,textures,materials,animations,lod,collision,license,owner,status,note
+char_hero,char,提灯少年（主角）,玩家可操作角色,SDXL 概念图 + Tripo3D 白模 + 人工重拓扑,art/Export/char_hero/SK_char_hero.fbx,38400,2048x2048,3,8,3,胶囊 + UCX x2,商业可用（自有 + AI 可商用）,你,已入库,贴图 3 张 BC/N/ORM；验收单 docs/08_验收单/char_hero.md
+env_ruins_wall,env,废墟墙模块（2m×3m，可平铺）,场景模块,Flux 概念图 + Meshy 初模 + 人工重拓扑,art/Export/env_ruins_wall/SM_env_ruins_wall.fbx,2400,2048x2048,1,0,3,UCX 盒 x1,商业可用（自有 + AI 可商用）,你,待验收,贴图 2 张；接缝已验；粗糙度 0.65–0.75

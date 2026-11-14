@@ -1,0 +1,7 @@
+# Issue 模板配置
+# 文档：https://docs.github.com/communities/using-templates-to-encourage-useful-issues-and-pull-requests/configuring-issue-templates-for-your-repository
+# 允许不使用模板、直接开空白 issue。
+blank_issues_enabled: true
+
+# 不配置 contact_links：本仓库没有需要外链的私密支持渠道。
+# 加链接前先确认链接可访问，否则会变成死链。

@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: CLI smoke test
+        run: |
+          python scripts/gamecheck.py --help
+          python scripts/gamecheck.py --show-rules
+
+      - name: Init a sample project
+        shell: bash
+        run: |
+          python scripts/gamecheck.py init --dir sample-project --name "CI Sample"
+          test -f sample-project/docs/00_立项书.md
+          test -f sample-project/scripts/gamecheck.py
+          python sample-project/scripts/gamecheck.py numbers check --root sample-project
