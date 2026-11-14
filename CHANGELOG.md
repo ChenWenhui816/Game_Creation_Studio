@@ -4,9 +4,24 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-14
+
+### Added
+
+- 中英双语入口：`README.en.md`、`SKILL.en.md`、`references/en/00-overview.md`；中文入口加语言切换链接。
+- `scripts/ue_import_assets.py`：按资产清单批量导入 FBX/GLB，自动设置材质、碰撞、LOD；支持 `--dry-run` 无 UE 校验。
+- `scripts/daily_gallery.py`：扫描 UE 截图，按日期生成自包含 HTML/Markdown 巡览页，支持 `--days`、`--compare`、`--json`。
+- 键鼠 + 手柄双输入：GDD/技术方案/测试记录/上线清单与 `gate release` 都要求两套设备可完成全流程、热切换与重映射。
+- `gamecheck.py change check`：变更单 ↔ 资产清单双向引用校验（CO- 编号、影响资产、清单 source/note）。
+- `gate release` 发布检查自动化：12/13 清单、双输入、双语商店素材（胶囊图尺寸/截图/文案/预告片/字幕）、变更对账。
+- `templates/13_多语言商店素材清单.md`：中英商店文案、截图、预告片字幕、胶囊图、元数据与合规逐项判定。
+- `tests/test_ue_import_assets.py`、`tests/test_daily_gallery.py`；CI 覆盖新脚本。
+
 ### Changed
 
-- 发布指南补充 v0.1.0 已发布状态、仓库与 Release 链接。
+- `gamecheck.py init` 复制 14 份模板、`gamecheck.py` 与 `store/` 目录；项目内可直接运行校验器。
+- `docs/维护规范.md`、`README.md`、`SKILL.md`、`references/00`、`02`、`04`、`05` 同步 v0.2 命令与判据。
+- 发布指南补充 v0.1.0/v0.2.0 已发布状态与链接。
 
 ## [0.1.0] - 2026-11-14
 

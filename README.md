@@ -1,10 +1,12 @@
 # UE5 单机 3D 闯关游戏 · 制作 Skill
 
+[中文](README.md) ｜ [English](README.en.md)
+
 **把"做游戏"拆成 6 个阶段、6 道可执行闸门，让 AI agent 按标准干活，你只做三类决策。**
 
 [![CI](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -30,6 +32,18 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.2.0 新增了什么
+
+| 能力 | 入口 | 解决什么 |
+|---|---|---|
+| 中英双语 | `README.en.md` / `SKILL.en.md` / `references/en/00-overview.md` | 英文协作者/agent 能直接读入口 |
+| UE Python 资产导入 | `scripts/ue_import_assets.py` | 按资产清单批量导入，自动设材质/碰撞/LOD |
+| 键鼠 + 手柄双输入 | GDD/技术方案/测试记录 + `gate release` | 两套设备都能通关，热切换与重映射有验收 |
+| 每日截图巡览 | `scripts/daily_gallery.py` | 每天 5 分钟看 12 张图，发现跑偏 |
+| 变更单 ↔ 资产清单联动 | `gamecheck.py change check` | 变更可追溯，清单引用不悬空 |
+| 发布检查自动化 | `gamecheck.py gate release --store-dir store` | 清单/双输入/商店素材/变更对账一次跑完 |
+| 多语言商店素材清单 | `templates/13_多语言商店素材清单.md` | 中英商店文案、截图、胶囊图、字幕逐项判定 |
 
 ## 六阶段与六道闸门
 
@@ -77,7 +91,7 @@ python ue5-solo-game-skill/scripts/gamecheck.py doc check --stage 0 --root D:\ga
 
 > 读 `ue5-solo-game-skill/SKILL.md`，按阶段推进我的项目；每次任务交交付单并附证据。
 
-`init` 会把 13 份模板和 `gamecheck.py` 一起复制进项目。之后在项目根直接用 `python scripts/gamecheck.py <子命令> --root .` 即可，不依赖 skill 的安装路径。
+`init` 会把 14 份模板、`scripts/gamecheck.py` 与 `store/` 目录一起复制进项目。之后在项目根直接用 `python scripts/gamecheck.py <子命令> --root .` 即可，不依赖 skill 的安装路径。
 
 ## 安装到不同 agent
 
@@ -88,7 +102,7 @@ python ue5-solo-game-skill/scripts/gamecheck.py doc check --stage 0 --root D:\ga
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
-> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.1.0`）。
+> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.2.0`）。
 
 ## 命令速查
 
@@ -101,7 +115,10 @@ python ue5-solo-game-skill/scripts/gamecheck.py doc check --stage 0 --root D:\ga
 | `gamecheck.py gate assets` | G3 资产合规 | 每批资产入库前 |
 | `gamecheck.py gate slice` | G3 垂直切片 | 切片结束 |
 | `gamecheck.py gate content` | G4 内容完成 | 内容生产结束 |
-| `gamecheck.py gate release` | G5 上线 | 发 Demo 前 |
+| `gamecheck.py gate release` | G5 上线（12/13 清单+双输入+商店素材） | 发 Demo 前 |
+| `gamecheck.py change check` | 变更单↔资产清单对账 | 每次变更后 |
+| `ue_import_assets.py --dry-run` | 资产导入预检（材质/碰撞/LOD） | 每批导入前 |
+| `daily_gallery.py --src ...` | 每日截图巡览 | 每天 5 分钟 |
 | `gamecheck.py numbers check` | 跳跃物理自洽 | 每次改数值 |
 | `gamecheck.py manifest check` | 清单与目录对账 | 每天 |
 
@@ -122,11 +139,20 @@ ue5-solo-game-skill/
 │  ├─ 04-引擎实现.md
 │  ├─ 05-打磨与Demo上线.md
 │  └─ 06-风险与反模式.md
-├─ templates/                # 13 份可直接填写的模板
-├─ scripts/gamecheck.py      # 闸门校验器（Python 标准库，无依赖）
-├─ tests/                    # 校验器单元测试
+├─ README.en.md              # English README
+├─ SKILL.en.md               # English skill entry
+├─ references/en/            # English overview（主 references 仍为中文）
+├─ templates/                # 14 份可直接填写的模板（含 13 多语言商店素材清单）
+├─ scripts/
+│  ├─ gamecheck.py           # 闸门校验器（标准库，无依赖）
+│  ├─ ue_import_assets.py    # UE 资产导入（材质/碰撞/LOD）
+│  └─ daily_gallery.py       # 每日截图巡览生成器
+├─ tests/                    # 校验器与脚本单元测试
 ├─ docs/
 │  ├─ 设计说明.md            # 这套流程为什么这样设计
+│  ├─ 维护规范.md            # 章节约定/改动联动清单
+│  ├─ UE资产导入脚本.md      # 导入脚本使用说明
+│  ├─ 每日截图巡览.md        # 巡览生成器使用说明
 │  └─ GitHub发布指南.md      # 发布、迭代、安装、FAQ
 └─ .github/workflows/ci.yml  # 推送自动跑测试
 ```
@@ -141,7 +167,7 @@ ue5-solo-game-skill/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.1.0`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.2.0`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

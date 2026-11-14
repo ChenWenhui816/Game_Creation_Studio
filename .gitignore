@@ -23,8 +23,10 @@ out/
 sample/
 sample-project/
 tmp/
+gallery/
 tests/_tmp/
-tests/_last_run*.txt
+tests/_debug/
+tests/_last*.txt
 tests/_last_run*.log
 *.log
 *.tmp

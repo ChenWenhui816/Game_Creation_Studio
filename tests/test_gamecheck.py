@@ -12,6 +12,7 @@ import importlib.util
 import json
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import unittest
@@ -22,7 +23,7 @@ SCRIPT = REPO_ROOT / "scripts" / "gamecheck.py"
 TEMPLATES = REPO_ROOT / "templates"
 # 有些沙箱/CI 的 系统临时目录不允许再建子目录；默认落在仓库 tests/_tmp 下，跑完即删。
 # 想换位置设环境变量 GAMECHECK_TEST_TMP。
-TMP_BASE = Path(os.environ.get("GAMECHECK_TEST_TMP") or (REPO_ROOT / "tests" / "_tmp"))
+TMP_BASE = Path(os.environ.get("GAMECHECK_TEST_TMP") or (REPO_ROOT / "tests" / "_tmp" / "gamecheck"))
 
 
 def new_case_dir():
@@ -119,6 +120,7 @@ def make_templates(base):
         "10_测试记录.md": "10_测试记录.md",
         "11_周报.md": "11_周报.md",
         "12_Demo上线清单.md": "12_Demo上线清单.md",
+        "13_多语言商店素材清单.md": "13_多语言商店素材清单.md",
     }
     base.mkdir(parents=True, exist_ok=True)
     for filename, key in mapping.items():
@@ -198,9 +200,12 @@ def write_assets(root, rows):
             target.write_bytes(b"")
 
 
-def build_checklist(checked, unchecked):
-    lines = ["# 12_Demo上线清单", ""]
-    for section in REQ["12_Demo上线清单.md"]:
+def build_checklist(filename, checked, unchecked, extra_text=""):
+    lines = ["# " + filename, ""]
+    if extra_text:
+        lines.append(extra_text)
+        lines.append("")
+    for section in REQ[filename]:
         lines.append("## " + section)
         lines.append("")
     for index in range(checked):
@@ -210,10 +215,59 @@ def build_checklist(checked, unchecked):
     return "\n".join(lines) + "\n"
 
 
+def png_bytes(width, height):
+    """只写 PNG 签名 + IHDR，足够让 read_png_size 读出尺寸（测试用）。"""
+    return (b"\x89PNG\r\n\x1a\n"
+            + struct.pack(">I", 13) + b"IHDR"
+            + struct.pack(">II", width, height)
+            + b"\x08\x06\x00\x00\x00" + b"\x00\x00\x00\x00")
+
+
+def write_store_assets(root):
+    store = root / "store"
+    store.mkdir(parents=True, exist_ok=True)
+    for name, (width, height) in gamecheck.STORE_CAPSULES.items():
+        write(store / name, "")
+        (store / name).write_bytes(png_bytes(width, height))
+    for lang in ("zh", "en"):
+        for index in range(1, 6):
+            path = store / ("screenshot_%s_%02d.png" % (lang, index))
+            path.write_bytes(png_bytes(1920, 1080))
+    write(store / "store_text_zh.md", "一句话卖点。长描述。" + "这是一段可判定的中文商店文案。" * 20)
+    write(store / "store_text_en.md", "One-liner. Long description. " + "This is a deterministic English store copy. " * 20)
+    write(store / "trailer_zh.srt", "1\n00:00:00,000 --> 00:00:02,000\n玩法画面\n")
+    write(store / "trailer_en.srt", "1\n00:00:00,000 --> 00:00:02,000\nGameplay\n")
+    (store / "trailer.mp4").write_bytes(b"0" * 110000)
+
+
+def write_change(root, change_id="CO-001", impact="char_hero", decision="批准", filename=None):
+    lines = ["# 变更单 — 测试", ""]
+    for section in REQ["09_变更单.md"]:
+        lines.append("## " + section)
+        lines.append("")
+        if section == "影响评估":
+            lines.append("| 资产 ID | 变更类型 |")
+            lines.append("|---|---|")
+            lines.append("| %s | 改规格 |" % impact)
+        elif section == "决策":
+            lines.append(decision)
+        else:
+            lines.append("内容。")
+        lines.append("")
+    path = root / "docs" / "09_变更单" / (filename or (change_id + "_测试.md"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write(path, "\n".join(lines) + "\n")
+    return path
+
+
 def build_project(root, asset_rows=None, numbers=None, weeks=4, checked=2, unchecked=0,
-                  accepted=True, level_checks=2, blind_test=True):
+                  accepted=True, level_checks=2, blind_test=True,
+                  checked13=2, unchecked13=0):
     for name in ("00_立项书.md", "01_游戏设计文档.md", "02_美术圣经.md", "03_技术方案.md"):
-        write(root / "docs" / name, md_text(name, extra=TABLE))
+        extra = TABLE
+        if name in ("01_游戏设计文档.md", "03_技术方案.md"):
+            extra = TABLE + "\n键鼠 手柄 输入映射"
+        write(root / "docs" / name, md_text(name, extra=extra))
     write_numbers(root, **(numbers or {}))
     write_assets(root, default_asset_rows() if asset_rows is None else asset_rows)
     write(root / "docs" / "04_关卡设计" / "01_第一关.md",
@@ -223,10 +277,16 @@ def build_project(root, asset_rows=None, numbers=None, weeks=4, checked=2, unche
           md_text("08_验收单.md",
                   conclusion="通过：满足验收标准。" if accepted else "待定：等待复验。"))
     write(root / "docs" / "10_测试记录.md",
-          md_text("10_测试记录.md", extra="盲测：3 人各 20 分钟，卡点 2 处。" if blind_test else ""))
+          md_text("10_测试记录.md",
+                  extra=("盲测：3 人各 20 分钟，卡点 2 处。键鼠全流程通过，手柄全流程通过。" if blind_test else "键鼠 手柄")))
     for index in range(weeks):
         write(root / "docs" / "11_周报" / ("2026-W%02d.md" % (index + 1)), md_text("11_周报.md"))
-    write(root / "docs" / "12_Demo上线清单.md", build_checklist(checked, unchecked))
+    write(root / "docs" / "12_Demo上线清单.md",
+          build_checklist("12_Demo上线清单.md", checked, unchecked))
+    write(root / "docs" / "13_多语言商店素材清单.md",
+          build_checklist("13_多语言商店素材清单.md", checked13, unchecked13,
+                          extra_text="语言矩阵：中文 + English"))
+    write_store_assets(root)
     return root
 
 
@@ -255,6 +315,7 @@ class InitTests(TempDirCase):
             "docs/03_技术方案.md", "docs/04_关卡设计", "docs/05_资产清单.csv",
             "docs/06_数值表.csv", "docs/07_交付单", "docs/08_验收单", "docs/09_变更单",
             "docs/10_测试记录.md", "docs/11_周报", "docs/12_Demo上线清单.md",
+            "docs/13_多语言商店素材清单.md", "store",
             "art/Source", "art/Export", "art/Inbox", "assets", "game", "scripts",
             "gamecheck.json", "AGENTS.md", "scripts/gamecheck.py",
         ]
@@ -506,6 +567,81 @@ class GateTests(TempDirCase):
         self.assertIn("不存在", proc.stdout)
 
 
+class ChangeOrderTests(TempDirCase):
+    def test_no_change_orders_passes(self):
+        build_project(self.root)
+        proc = run(["change", "check", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+
+    def test_change_links_asset_passes(self):
+        rows = default_asset_rows()
+        rows[0]["note"] = "CO-001"
+        build_project(self.root, asset_rows=rows)
+        write_change(self.root, "CO-001", "char_hero")
+        proc = run(["change", "check", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 0, proc.stdout)
+
+    def test_change_missing_asset_fails(self):
+        build_project(self.root)
+        write_change(self.root, "CO-001", "char_missing")
+        proc = run(["change", "check", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("不存在", proc.stdout)
+
+    def test_manifest_ref_missing_order_fails(self):
+        rows = default_asset_rows()
+        rows[0]["note"] = "CO-999"
+        build_project(self.root, asset_rows=rows)
+        proc = run(["change", "check", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("CO-999", proc.stdout)
+
+    def test_change_without_asset_impact_fails(self):
+        build_project(self.root)
+        path = self.root / "docs" / "09_变更单" / "CO-002_无影响.md"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        lines = ["# 变更单 — 无影响", ""]
+        for section in REQ["09_变更单.md"]:
+            lines.append("## " + section)
+            lines.append("")
+            lines.append("内容。")
+            lines.append("")
+        write(path, "\n".join(lines) + "\n")
+        proc = run(["change", "check", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("影响评估", proc.stdout)
+
+
+class ReleaseStoreTests(TempDirCase):
+    def test_release_missing_store_file_fails(self):
+        build_project(self.root)
+        (self.root / "store" / "header.png").unlink()
+        proc = run(["gate", "release", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("header.png", proc.stdout)
+
+    def test_release_bad_screenshot_size_fails(self):
+        build_project(self.root)
+        (self.root / "store" / "screenshot_zh_01.png").write_bytes(png_bytes(1280, 720))
+        proc = run(["gate", "release", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("1920x1080", proc.stdout)
+
+    def test_release_missing_dual_input_fails(self):
+        build_project(self.root)
+        text = (self.root / "docs" / "10_测试记录.md").read_text(encoding="utf-8")
+        write(self.root / "docs" / "10_测试记录.md", text.replace("手柄", "Xbox"))
+        proc = run(["gate", "release", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("手柄", proc.stdout)
+
+    def test_release_13_unchecked_fails(self):
+        build_project(self.root, checked13=1, unchecked13=1)
+        proc = run(["gate", "release", "--root", str(self.root)])
+        self.assertEqual(proc.returncode, 1)
+        self.assertIn("13_多语言商店素材清单", proc.stdout)
+
+
 class OutputTests(TempDirCase):
     def test_json_report_is_parsable(self):
         build_project(self.root)
@@ -541,7 +677,7 @@ class OutputTests(TempDirCase):
     def test_help_lists_subcommands(self):
         proc = run(["--help"])
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        for token in ("init", "doc", "gate", "numbers", "manifest", "check"):
+        for token in ("init", "doc", "gate", "numbers", "manifest", "change", "check"):
             self.assertIn(token, proc.stdout)
 
 
@@ -560,6 +696,7 @@ class SpecConsistencyTests(unittest.TestCase):
         self.assertIn("结论", REQ["08_验收单.md"])
         self.assertIn("关卡目标", REQ["04_关卡设计.md"])
         self.assertIn("MCP 与自动化", REQ["03_技术方案.md"])
+        self.assertIn("语言矩阵", REQ["13_多语言商店素材清单.md"])
         self.assertEqual(len(ASSET_HEADER), 16)
         self.assertEqual(len(NUM_HEADER), 7)
         self.assertEqual(REQ["11_周报.md"],
@@ -580,6 +717,7 @@ class SpecConsistencyTests(unittest.TestCase):
             "10_测试记录.md": "10_测试记录.md",
             "11_周报.md": "11_周报.md",
             "12_Demo上线清单.md": "12_Demo上线清单.md",
+            "13_多语言商店素材清单.md": "13_多语言商店素材清单.md",
         }
         for filename, key in mapping.items():
             path = TEMPLATES / filename

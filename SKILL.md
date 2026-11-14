@@ -1,6 +1,8 @@
 ---
 name: ue5-solo-game
-description: UE5 单角色单机 3D 闯关游戏制作总控。用于立项、写游戏设计文档/美术圣经/技术方案、AI 美术与 3D 资产管线、UE5 白模与系统实现、关卡制作、测试打包、Steam/Epic Demo 上线与版本迭代。按阶段路由到 references 下的细分流程，并用 scripts/gamecheck.py 跑闸门。
+description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入口）。用于立项、写游戏设计文档/美术圣经/技术方案、AI 美术与 3D 资产管线、UE5 白模与系统实现、键鼠+手柄双输入、关卡制作、每日截图巡览、测试打包、Steam/Epic Demo 上线与版本迭代。按阶段路由到 references 下的细分流程，并用 scripts/gamecheck.py 跑闸门。
+
+> English entry: [SKILL.en.md](SKILL.en.md) ｜ 中文入口：本文件
 ---
 
 # UE5 单机 3D 闯关游戏 · 制作总控
@@ -19,7 +21,7 @@ description: UE5 单角色单机 3D 闯关游戏制作总控。用于立项、�
 
 如果用户只是说"我想做个游戏"，还没有项目：从 P0 开始，加载 `references/01-立项.md`，先做立项访谈，不要碰引擎。
 
-## 铁律（七条）
+## 铁律（八条）
 
 1. **标准书是唯一真相。** 代码、资产、关卡与 `docs/01`–`docs/03` 冲突时改实现，不改书；改书必须走变更单。
 2. **用户只做三类决策**：需求（做什么/砍什么）、素材（A/B/C 选一）、验收（能否进游戏）。其余由你决策，并把理由写进交付单。
@@ -28,6 +30,7 @@ description: UE5 单角色单机 3D 闯关游戏制作总控。用于立项、�
 5. **数值只活在一个地方**：`docs/06_数值表.csv`。文档和代码都引用它，不复制它。
 6. **闸门只能靠修内容变绿**，不能删检查项、放宽容差、跳过章节。
 7. **每天一次 commit + 一个可运行构建**；没有可回滚的版本，不允许开始批量操作。
+8. **变更单与资产清单必须双向对账**：变更单写 `CO-001` 与影响资产；清单 `source`/`note` 引用编号；跑 `change check`。
 
 ## 阶段路由表
 
@@ -39,7 +42,8 @@ description: UE5 单角色单机 3D 闯关游戏制作总控。用于立项、�
 | 标准已冻结，要工程和手感 | `references/04-引擎实现.md` | `gate whitebox` | 角色不能跑跳，或盲测未过 |
 | 要产出或审核美术资产 | `references/03-美术资产管线.md` | `gate assets` | 资产清单/目录对不上 |
 | 要做垂直切片或内容生产 | `references/04-引擎实现.md` | `gate slice` | 没有 1 关完整流程 |
-| 要做打磨、商店、Demo | `references/05-打磨与Demo上线.md` | `gate release` | 上线清单未全勾 |
+| 要批量导入资产 / 每日看截图 | `references/04-引擎实现.md` | `ue_import_assets.py --dry-run` / `daily_gallery.py` | 导入靠手点、跑偏靠感觉 |
+| 要做打磨、商店、Demo | `references/05-打磨与Demo上线.md` | `gate release` | 上线清单/13 清单未全勾，或缺双输入/商店素材 |
 | 范围失控 / 连续返工 / 不知道怎么砍 | `references/06-风险与反模式.md` | — | 变更单堆积、周报连续阻塞 |
 | 第一次接手 / 要向人解释流程 | `references/00-总览与协作.md` | — | — |
 
@@ -66,9 +70,12 @@ description: UE5 单角色单机 3D 闯关游戏制作总控。用于立项、�
 | `gamecheck.py gate assets` | G3 资产合规 | 每批资产入库前 |
 | `gamecheck.py gate slice` | G3 垂直切片 | 切片结束 |
 | `gamecheck.py gate content` | G4 内容完成 | 内容生产结束 |
-| `gamecheck.py gate release` | G5 上线 | 发 Demo 前 |
+| `gamecheck.py gate release` | G5 上线（12/13 清单+双输入+商店素材） | 发 Demo 前 |
 | `gamecheck.py numbers check` | 跳跃物理自洽 | 每次改数值 |
 | `gamecheck.py manifest check` | 清单与目录对账 | 每天 |
+| `gamecheck.py change check` | 变更单↔资产清单双向对账 | 每次变更后 |
+| `ue_import_assets.py --dry-run` | 资产导入预检（材质/碰撞/LOD） | 每批导入前 |
+| `daily_gallery.py --src ...` | 每日截图巡览 | 每天 5 分钟 |
 
 **读退出码，不要读日志猜。** 0 = 通过，1 = 不通过，2 = 用法错误。
 
@@ -98,7 +105,11 @@ description: UE5 单角色单机 3D 闯关游戏制作总控。用于立项、�
 | `references/04-引擎实现.md` | P2–P4：工程、白模、系统、关卡、打包 |
 | `references/05-打磨与Demo上线.md` | P5：打磨、Steam/Epic、上线清单 |
 | `references/06-风险与反模式.md` | 20 个坑、砍功能协议、复盘 |
-| `templates/` | 13 份可直接填写的模板 |
+| `templates/` | 14 份可直接填写的模板（含 13 多语言商店素材清单） |
 | `scripts/gamecheck.py` | 闸门校验器（标准库，无依赖） |
+| `scripts/ue_import_assets.py` | UE 资产导入（材质/碰撞/LOD） |
+| `scripts/daily_gallery.py` | 每日截图巡览生成器 |
+| `references/en/00-overview.md` | English overview（中文 references 仍是主源） |
+| `README.en.md` | English README |
 | `docs/设计说明.md` | 这套流程为什么这样设计 |
 | `docs/GitHub发布指南.md` | 发布与迭代 |

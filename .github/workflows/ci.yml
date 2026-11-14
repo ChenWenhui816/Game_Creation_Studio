@@ -33,6 +33,8 @@ jobs:
         run: |
           python scripts/gamecheck.py --help
           python scripts/gamecheck.py --show-rules
+          python scripts/ue_import_assets.py --help
+          python scripts/daily_gallery.py --help
 
       - name: Init a sample project
         shell: bash

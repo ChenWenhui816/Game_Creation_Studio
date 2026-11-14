@@ -31,6 +31,7 @@ import json
 import os
 import re
 import shutil
+import struct
 import sys
 from pathlib import Path
 
@@ -41,6 +42,21 @@ DOCS_DIR = "docs"
 ASSET_CSV = "05_资产清单.csv"
 NUM_CSV = "06_数值表.csv"
 CONTENT_MIN_ASSETS = 24
+STORE_DIR = "store"
+STORE_CAPSULES = {
+    "header.png": (460, 215),
+    "small.png": (231, 87),
+    "main.png": (616, 353),
+    "vertical.png": (374, 448),
+    "library.png": (600, 900),
+}
+STORE_SCREENSHOT_SIZE = (1920, 1080)
+STORE_SCREENSHOT_MIN = 5
+STORE_TEXT_FILES = ("store_text_zh.md", "store_text_en.md")
+STORE_SUBTITLE_FILES = ("trailer_zh.srt", "trailer_en.srt")
+STORE_TRAILERS = ("trailer.mp4", "trailer.webm")
+CHANGE_ID_PATTERN = re.compile(r"(?:CO|CR)-\d{3,}", re.IGNORECASE)
+ASSET_ID_SCAN_PATTERN = re.compile(r"\b(?:char|enemy|env|prop|fx|ui|anim|mat)_[a-z0-9_]+\b")
 
 STAGE_NAMES = {
     0: "立项",
@@ -90,6 +106,9 @@ REQUIRED_SECTIONS = {
     "12_Demo上线清单.md": [
         "账号与资质", "商店页", "构建与认证", "商店素材", "法律与合规", "上线演练",
     ],
+    "13_多语言商店素材清单.md": [
+        "语言矩阵", "商店文案", "截图与预告片", "胶囊图与素材", "元数据与合规", "审核清单",
+    ],
 }
 
 # 目录型文档 → 用哪套章节规则
@@ -107,7 +126,7 @@ _STAGE_SINGLE = {
     2: [],
     3: [],
     4: ["10_测试记录.md"],
-    5: ["12_Demo上线清单.md"],
+    5: ["12_Demo上线清单.md", "13_多语言商店素材清单.md"],
 }
 _STAGE_DIR = {
     0: [],
@@ -163,11 +182,12 @@ NUM_ALIAS_HINT = "、".join(
     for aliases in NUM_KEY_ALIASES.values()
 )
 
-# init 要复制的模板（全部 13 份；07/08 以 _模板_ 前缀放进项目，不计入闸门数量）
+# init 要复制的模板（全部 14 份；07/08 以 _模板_ 前缀放进项目，不计入闸门数量）
 TEMPLATE_FILES = [
     "00_立项书.md", "01_游戏设计文档.md", "02_美术圣经.md", "03_技术方案.md",
     "04_关卡设计.md", ASSET_CSV, NUM_CSV, "07_交付单.md", "08_验收单.md",
     "09_变更单.md", "10_测试记录.md", "11_周报.md", "12_Demo上线清单.md",
+    "13_多语言商店素材清单.md",
 ]
 TEMPLATE_DEST = {
     "00_立项书.md": "docs/00_立项书.md",
@@ -183,6 +203,7 @@ TEMPLATE_DEST = {
     "10_测试记录.md": "docs/10_测试记录.md",
     "11_周报.md": "docs/11_周报/_模板_周报.md",
     "12_Demo上线清单.md": "docs/12_Demo上线清单.md",
+    "13_多语言商店素材清单.md": "docs/13_多语言商店素材清单.md",
 }
 INIT_DIRS = [
     "docs",
@@ -197,6 +218,7 @@ INIT_DIRS = [
     "assets",
     "game",
     "scripts",
+    STORE_DIR,
 ]
 
 EXAMPLES = """示例：
@@ -205,6 +227,8 @@ EXAMPLES = """示例：
   python scripts/gamecheck.py numbers check --root ../MyGame --json
   python scripts/gamecheck.py gate slice --root ../MyGame
   python scripts/gamecheck.py gate content --root ../MyGame --min-assets 24
+  python scripts/gamecheck.py change check --root ../MyGame
+  python scripts/gamecheck.py gate release --root ../MyGame --store-dir store
   python scripts/gamecheck.py check all --root ../MyGame"""
 
 
@@ -880,42 +904,6 @@ def check_table_count(root: Path, report: Report, name: str, minimum: int = 3) -
         )
 
 
-def check_release_checkboxes(root: Path, report: Report) -> None:
-    path = root / DOCS_DIR / "12_Demo上线清单.md"
-    label = "%s/12_Demo上线清单.md" % DOCS_DIR
-    if not path.is_file():
-        report.fail("%s 缺失" % label, hint="把 templates/12_Demo上线清单.md 复制到 docs/ 后逐项勾选")
-        return
-    text = read_text(path)
-    unchecked = []
-    checked = 0
-    total = 0
-    for line_no, line in enumerate(text.splitlines(), 1):
-        match = CHECKBOX_PATTERN.match(line)
-        if not match:
-            continue
-        total += 1
-        if match.group("mark") == " ":
-            unchecked.append((line_no, (match.group("text") or "").strip()))
-        else:
-            checked += 1
-    if total == 0:
-        report.fail(
-            "%s 没有找到勾选项（- [ ] / - [x]）" % label,
-            hint="每个上线条目写成「- [ ] 具体事项 + 完成标准」，完成后改成 - [x]",
-        )
-        return
-    if unchecked:
-        sample = "；".join("第 %d 行「%s」" % (line_no, text[:20]) for line_no, text in unchecked[:5])
-        report.fail(
-            "%s 还有 %d 项未勾选（共 %d 项，已勾 %d 项）：%s"
-            % (label, len(unchecked), total, checked, sample),
-            hint="未完成项不许上线：完成并改 - [x]；确实不做的项写明理由后从清单删除",
-        )
-    else:
-        report.ok("%s %d 项全部已勾选" % (label, total))
-
-
 def check_test_record_placeholders(root: Path, report: Report,
                                    silent_if_missing: bool = False) -> None:
     path = root / DOCS_DIR / "10_测试记录.md"
@@ -1107,6 +1095,8 @@ def build_agents_md(skill_rel: str, script_rel: str) -> str:
 - 不编造 UE / Steam / Epic 的 API、价格、政策；不确定就写“以官方文档为准”并给官方链接。
 - 每个任务交一份交付单：从 docs/07_交付单/_模板_交付单.md 复制到 docs/07_交付单/<编号>.md。
 - 资产验收从 docs/08_验收单/_模板_验收单.md 复制到 docs/08_验收单/<资产名>.md。
+- 资产导入先 dry-run：python {skill_rel}/scripts/ue_import_assets.py --project-root . --dry-run
+- 每天生成截图巡览：python {skill_rel}/scripts/daily_gallery.py --src game/Saved/Screenshots --out gallery
 
 ## 常用命令
 
@@ -1115,6 +1105,8 @@ def build_agents_md(skill_rel: str, script_rel: str) -> str:
 | 看当前阶段缺什么 | python {script_rel} doc check --stage 2 --root . |
 | 数值自洽 | python {script_rel} numbers check --root . |
 | 资产清单 | python {script_rel} manifest check --root . |
+| 变更单联动 | python {script_rel} change check --root . |
+| 上线闸门 | python {script_rel} gate release --root . --store-dir store |
 | 全部检查 | python {script_rel} check all --root . |
 | 看校验规则 | python {script_rel} --show-rules |
 
@@ -1289,12 +1281,19 @@ def cmd_manifest(args, root: Path) -> int:
     return finish(report, args, "manifest check", root)
 
 
+def cmd_change(args, root: Path) -> int:
+    report = Report()
+    check_changes(root, report)
+    return finish(report, args, "change check", root)
+
+
 def cmd_check_all(args, root: Path) -> int:
     report = Report()
-    report.ok("组合检查：doc stage 5 + numbers check + manifest check（不早停）")
+    report.ok("组合检查：doc stage 5 + numbers check + manifest check + change check（不早停）")
     check_documents(root, report, 5)
     check_numbers(root, report)
     check_manifest(root, report)
+    check_changes(root, report)
     if report.failed:
         report.warn("修复建议：先按上面 [FAIL] 逐条修（文档 → 数值 → 清单），再重跑本命令；各闸门命令会再逐项复查")
     return finish(report, args, "check all", root)
@@ -1329,6 +1328,9 @@ def cmd_gate(args, root: Path) -> int:
         _track(report, tips, "已入库数量",
                lambda: check_content_stock(root, report, level_count.get("count"), override),
                "把通过验收的资产 status 改为 已入库，或按关卡数补足；默认下限 24 条")
+        _track(report, tips, "变更单联动",
+               lambda: check_changes(root, report),
+               "每张变更单写 CO- 编号与影响资产；清单 source/note 引用的编号必须存在")
         if report.failed:
             report.warn("G4 内容生产闸门看“量 + 证据”：关卡数×8 是资产产能下限，验收清单是逐关判定依据")
     elif gate == "spec":
@@ -1385,18 +1387,27 @@ def cmd_gate(args, root: Path) -> int:
         if report.failed:
             report.warn("切片闸门证明“管线可复现”：1 个完整关卡 + 核心系统 + 成品美术，缺一不可")
     elif gate == "release":
-        report.ok("闸门 release：Demo 上线（阶段 P5）——文档阶段 5 + 上线清单全勾选 + 测试记录无占位符")
+        report.ok("闸门 release：Demo 上线（阶段 P5）——文档阶段 5 + 12/13 清单全勾选 + 双输入 + 商店素材 + 变更联动")
         _track(report, tips, "文档阶段 5",
                lambda: check_documents(root, report, 5, {"10_测试记录.md"}),
                "补齐 P0–P5 全部文档与 H2 章节")
-        _track(report, tips, "上线清单勾选",
-               lambda: check_release_checkboxes(root, report),
+        _track(report, tips, "Demo 上线清单勾选",
+               lambda: check_release_checkboxes(root, report, "12_Demo上线清单.md"),
                "逐项完成并改成 - [x]；不做的项写明理由后从清单删除")
+        _track(report, tips, "多语言商店清单与双输入",
+               lambda: check_release_localization(root, report),
+               "13 清单全勾；测试记录/ GDD /技术方案同时覆盖键鼠与手柄；中英商店文案齐备")
         _track(report, tips, "测试记录",
                lambda: check_test_record_placeholders(root, report, True),
                "把 docs/10_测试记录.md 的占位符换成真实版本/用例/缺陷/性能数据")
+        _track(report, tips, "商店素材",
+               lambda: check_store_assets(root, report, getattr(args, "store_dir", STORE_DIR)),
+               "按 templates/13 的命名与尺寸放 5 张胶囊图、双语截图、文案、预告片与字幕")
+        _track(report, tips, "变更单联动",
+               lambda: check_changes(root, report),
+               "每张变更单写 CO- 编号与影响资产；清单 source/note 引用的编号必须存在")
         if report.failed:
-            report.warn("上线闸门不允许“基本完成”：任何未勾选项都算不通过")
+            report.warn("上线闸门不允许“基本完成”：任何未勾选项、缺图或未验证输入都算不通过")
     else:
         report.fail("未知闸门：%s" % gate, hint="可选：spec / whitebox / assets / slice / content / release")
         return finish(report, args, "gate %s" % gate, root)
@@ -1438,6 +1449,258 @@ def check_stock_count(root: Path, report: Report) -> None:
         )
 
 
+
+def read_png_size(path: Path):
+    """读取 PNG 的 (宽, 高)；非 PNG 或损坏返回 None。"""
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(24)
+    except OSError:
+        return None
+    if len(head) < 24 or head[:8] != b"\x89PNG\r\n\x1a\n" or head[12:16] != b"IHDR":
+        return None
+    width, height = struct.unpack(">II", head[16:24])
+    return int(width), int(height)
+
+
+def split_sections(text: str):
+    """按 H2 切分，返回 {章节名: 正文}（同名章节后出现的覆盖前面的）。"""
+    sections = {}
+    current = None
+    buffer = []
+    for line in text.splitlines():
+        match = H2_PATTERN.match(line)
+        if match:
+            if current is not None:
+                sections[current] = "\n".join(buffer).strip()
+            current = match.group(1).strip()
+            buffer = []
+        elif current is not None:
+            buffer.append(line)
+    if current is not None:
+        sections[current] = "\n".join(buffer).strip()
+    return sections
+
+
+def check_release_checkboxes(root: Path, report: Report,
+                             filename: str = "12_Demo上线清单.md") -> None:
+    path = root / DOCS_DIR / filename
+    label = "%s/%s" % (DOCS_DIR, filename)
+    if not path.is_file():
+        report.fail("%s 缺失" % label, hint="把 templates/%s 复制到 docs/ 后逐项勾选" % filename)
+        return
+    text = read_text(path)
+    unchecked = []
+    checked = 0
+    total = 0
+    for line_no, line in enumerate(text.splitlines(), 1):
+        match = CHECKBOX_PATTERN.match(line)
+        if not match:
+            continue
+        total += 1
+        if match.group("mark") == " ":
+            unchecked.append((line_no, (match.group("text") or "").strip()))
+        else:
+            checked += 1
+    if total == 0:
+        report.fail(
+            "%s 没有找到勾选项（- [ ] / - [x]）" % label,
+            hint="每个上线条目写成「- [ ] 具体事项 + 完成标准」，完成后改成 - [x]",
+        )
+        return
+    if unchecked:
+        sample = "；".join("第 %d 行「%s」" % (line_no, text[:20]) for line_no, text in unchecked[:5])
+        report.fail(
+            "%s 还有 %d 项未勾选（共 %d 项，已勾 %d 项）：%s"
+            % (label, len(unchecked), total, checked, sample),
+            hint="未完成项不许上线：完成并改 - [x]；确实不做的项写明理由后从清单删除",
+        )
+    else:
+        report.ok("%s %d 项全部已勾选" % (label, total))
+
+
+def check_store_assets(root: Path, report: Report, store_rel: str = STORE_DIR) -> None:
+    """检查 store/ 下的胶囊图、双语截图、商店文案、预告片与字幕。"""
+    store = root / store_rel
+    label = store_rel.rstrip("/") + "/"
+    if not store.is_dir():
+        report.fail(
+            "%s 目录缺失" % label,
+            hint="按 templates/13_多语言商店素材清单.md 建 store/，放 5 张胶囊图、双语截图、文案、预告片与字幕",
+        )
+        return
+    for name, expected in STORE_CAPSULES.items():
+        path = store / name
+        if not path.is_file():
+            report.fail("%s%s 缺失（应为 %dx%d PNG）" % (label, name, expected[0], expected[1]),
+                        hint="按 templates/13 的尺寸表导出；文件名不要改")
+            continue
+        actual = read_png_size(path)
+        if actual is None:
+            report.fail("%s%s 不是有效 PNG" % (label, name), hint="导出 PNG（不要改扩展名）后重试")
+        elif actual != expected:
+            report.fail(
+                "%s%s 尺寸 %dx%d，要求 %dx%d" % (label, name, actual[0], actual[1], expected[0], expected[1]),
+                hint="按 templates/13 的尺寸表重新导出",
+            )
+        else:
+            report.ok("%s%s 尺寸正确 %dx%d" % (label, name, expected[0], expected[1]))
+
+    for lang in ("zh", "en"):
+        shots = sorted(store.glob("screenshot_%s_*.png" % lang))
+        if len(shots) < STORE_SCREENSHOT_MIN:
+            report.fail(
+                "%s 语言 %s 的截图只有 %d 张（要求 ≥%d 张）" % (label, lang, len(shots), STORE_SCREENSHOT_MIN),
+                hint="按 templates/13 命名 screenshot_%s_01.png …；每张 1920x1080" % lang,
+            )
+            continue
+        bad = []
+        for shot in shots:
+            size = read_png_size(shot)
+            if size != STORE_SCREENSHOT_SIZE:
+                bad.append("%s=%s" % (shot.name, size))
+        if bad:
+            report.fail("%s 语言 %s 截图尺寸不符：%s" % (label, lang, "、".join(bad[:3])),
+                        hint="统一导出 1920x1080 PNG")
+        else:
+            report.ok("%s 语言 %s 截图 %d 张，均为 1920x1080" % (label, lang, len(shots)))
+
+    for filename in STORE_TEXT_FILES:
+        path = store / filename
+        if not path.is_file():
+            report.fail("%s%s 缺失" % (label, filename), hint="写中文/English 商店文案（各 500 字/300 词以上）")
+            continue
+        text = read_text(path)
+        if len(text.strip()) < 200:
+            report.fail("%s%s 内容过短（%d 字符，要求 ≥200）" % (label, filename, len(text.strip())),
+                        hint="补一句话卖点、长描述、标签、系统需求、FAQ")
+        elif find_placeholders(text):
+            report.fail("%s%s 仍有占位符" % (label, filename), hint="清掉【待填】/TODO 后再跑")
+        else:
+            report.ok("%s%s 已填写（%d 字符）" % (label, filename, len(text.strip())))
+
+    for filename in STORE_SUBTITLE_FILES:
+        path = store / filename
+        if not path.is_file() or len(read_text(path).strip()) < 20:
+            report.fail("%s%s 缺失或过短" % (label, filename), hint="导出与预告片时间轴对齐的 UTF-8 SRT")
+        else:
+            report.ok("%s%s 已填写" % (label, filename))
+
+    trailer_ok = False
+    for filename in STORE_TRAILERS:
+        path = store / filename
+        if path.is_file() and path.stat().st_size > 100 * 1024:
+            report.ok("%s%s 存在（%.1f MB）" % (label, filename, path.stat().st_size / 1048576.0))
+            trailer_ok = True
+            break
+    if not trailer_ok:
+        report.fail("%s 预告片缺失或小于 100 KB" % label,
+                    hint="放 trailer.mp4 或 trailer.webm（30–60 s，H.264，1080p）")
+
+
+def check_release_localization(root: Path, report: Report) -> None:
+    """G5：双输入（键鼠+手柄）+ 双语商店/界面 + 13 清单勾选。"""
+    check_release_checkboxes(root, report, "13_多语言商店素材清单.md")
+    checks = (
+        ("10_测试记录.md", ("键鼠", "手柄"), "测试记录必须分别记录键鼠与手柄全流程"),
+        ("01_游戏设计文档.md", ("键鼠", "手柄"), "GDD 操作表必须同时覆盖键鼠与手柄"),
+        ("03_技术方案.md", ("输入映射", "手柄"), "技术方案必须有键鼠+手柄输入映射"),
+    )
+    for filename, needles, hint in checks:
+        path = root / DOCS_DIR / filename
+        if not path.is_file():
+            report.fail("docs/%s 缺失，无法验证双输入" % filename, hint="补齐文档后再跑")
+            continue
+        text = read_text(path)
+        missing = [needle for needle in needles if needle not in text]
+        if missing:
+            report.fail(
+                "docs/%s 缺少双输入证据：%s" % (filename, "、".join(missing)),
+                hint=hint,
+            )
+        else:
+            report.ok("docs/%s 含双输入证据（%s）" % (filename, "、".join(needles)))
+    text13_path = root / DOCS_DIR / "13_多语言商店素材清单.md"
+    if text13_path.is_file():
+        text13 = read_text(text13_path)
+        missing = [token for token in ("中文", "English") if token not in text13]
+        if missing:
+            report.fail("docs/13 缺少语言声明：%s" % "、".join(missing),
+                        hint="语言矩阵必须同时写中文与 English")
+        else:
+            report.ok("docs/13 声明了中文与 English")
+
+
+def check_changes(root: Path, report: Report) -> None:
+    """变更单 ↔ 资产清单联动校验。
+
+    规则：
+    1) 每张变更单必须有 CO-/CR- 编号，且「影响评估」列出资产 ID 或写“无资产影响”；
+    2) 变更单引用的资产 ID 必须存在于 05_资产清单.csv；
+    3) 资产清单 source/note 里引用的 CO-/CR- 编号必须有对应变更单；
+    4) 决策栏写“待定”给 warning，不阻断（允许先做后批，但会提示）。
+    """
+    orders_dir = root / DOCS_DIR / "09_变更单"
+    orders = []
+    if orders_dir.is_dir():
+        orders = sorted(item for item in orders_dir.glob("*.md")
+                        if item.is_file() and not item.name.startswith("_"))
+    if not orders:
+        report.ok("docs/09_变更单/ 无变更单（仍会检查资产清单里的 CO-/CR- 引用）")
+
+    manifest_path = root / DOCS_DIR / ASSET_CSV
+    asset_ids = set()
+    manifest_rows = []
+    if manifest_path.is_file():
+        header, rows, error = parse_csv(manifest_path)
+        if not error and header == ASSET_HEADER:
+            index = {name: pos for pos, name in enumerate(header)}
+            for _, cells in rows:
+                asset_ids.add(cell(cells, index, "id"))
+                manifest_rows.append((cell(cells, index, "id"), cells, index))
+    known_order_ids = set()
+    order_assets = {}
+    for path in orders:
+        label = "docs/09_变更单/" + path.name
+        check_md_document(report, path, "09_变更单.md", label)
+        text = read_text(path)
+        match = CHANGE_ID_PATTERN.search(path.stem) or CHANGE_ID_PATTERN.search(text)
+        if not match:
+            report.fail("%s 缺少变更单编号（CO-001 / CR-001）" % label,
+                        hint="在编号行写 CO-<数字>，例如 CO-001")
+            continue
+        change_id = match.group(0).upper()
+        known_order_ids.add(change_id)
+        sections = split_sections(text)
+        impact = sections.get("影响评估", "")
+        ids = sorted(set(ASSET_ID_SCAN_PATTERN.findall(impact)))
+        if not ids and "无资产影响" not in impact:
+            report.fail("%s 的「影响评估」没有资产 ID，也没有写“无资产影响”" % label,
+                        hint="加一张影响资产表（资产 ID/变更类型/变更后状态/验收单），或明确写“无资产影响”")
+        missing = [asset_id for asset_id in ids if asset_id not in asset_ids]
+        if missing:
+            report.fail("%s 引用了资产清单里不存在的资产：%s" % (label, "、".join(missing)),
+                        hint="先在 docs/05_资产清单.csv 登记该资产，或修正变更单里的 ID")
+        order_assets[change_id] = set(ids)
+        if ids:
+            report.ok("%s 关联 %d 个资产：%s" % (label, len(ids), "、".join(ids[:5])))
+        decision = sections.get("决策", "")
+        if "待定" in decision or not any(word in decision for word in ("批准", "通过", "驳回", "已批", "已拒")):
+            report.warn("%s 的「决策」还没有明确结论（批准/驳回/待定）" % label)
+
+    for asset_id, cells, index in manifest_rows:
+        combined = (cell(cells, index, "source") + " " + cell(cells, index, "note"))
+        refs = sorted(set(ref.upper() for ref in CHANGE_ID_PATTERN.findall(combined)))
+        for ref in refs:
+            if ref not in known_order_ids:
+                report.fail("资产 %s 引用了不存在的变更单 %s" % (asset_id, ref),
+                            hint="补 docs/09_变更单/%s_*.md，或修正 source/note" % ref)
+    linked = sum(1 for refs in order_assets.values() if refs)
+    if orders:
+        report.ok("变更单联动：%d 张变更单，%d 张关联资产，清单中资产 %d 条"
+                  % (len(orders), linked, len(asset_ids)))
+
+
 # ---------------------------------------------------------------------------
 # 规则输出
 # ---------------------------------------------------------------------------
@@ -1451,8 +1714,8 @@ def rules_data():
             "whitebox": "doc stage 2 + numbers check + 10_测试记录含“盲测”且无占位符",
             "assets": "doc stage 1 + manifest check",
             "slice": "doc stage 3 + ≥1 份验收单结论=通过 + 05 已入库 ≥10 条",
-            "content": "doc stage 4 + 每关「验收清单」全勾选 + 10_测试记录无占位符 + 05 已入库 ≥ 关卡数×8（默认下限 24，--min-assets 覆盖）",
-            "release": "doc stage 5 + 12_Demo上线清单无未勾选 + 10_测试记录无占位符",
+            "content": "doc stage 4 + 每关「验收清单」全勾选 + 10_测试记录无占位符 + 05 已入库 ≥ 关卡数×8（默认下限 24，--min-assets 覆盖）+ change check",
+            "release": "doc stage 5 + 12/13 清单无未勾选 + 10_测试记录无占位符 + 双输入 + 商店素材 + change check",
         },
         "placeholders": {
             "forbidden": list(PLACEHOLDER_TOKENS),
@@ -1609,7 +1872,7 @@ def build_parser():
         "assets": "G3 资产管线：文档阶段 1 + 资产清单逐行校验",
         "slice": "G3 垂直切片：文档阶段 3 + 验收通过 + 已入库 ≥10",
         "content": "G4 内容生产：文档阶段 4 + 每关验收清单全勾选 + 已入库 ≥ 关卡数×8",
-        "release": "G5 Demo 上线：文档阶段 5 + 上线清单全勾选 + 测试记录干净",
+        "release": "G5 Demo 上线：文档阶段 5 + 12/13 清单全勾选 + 双输入 + 商店素材 + 变更联动",
     }
     gate_parsers = {}
     for gate_name, help_text in gate_help.items():
@@ -1618,6 +1881,14 @@ def build_parser():
         "--min-assets", type=int, default=None,
         help="覆盖已入库数量下限（默认 max(关卡数×8, 24)）",
     )
+    gate_parsers["release"].add_argument(
+        "--store-dir", default=STORE_DIR,
+        help="商店素材目录（默认 store/）",
+    )
+
+    p_change = sub.add_parser("change", parents=[common], help="变更单联动检查")
+    change_sub = p_change.add_subparsers(dest="change_cmd", metavar="<动作>", required=True)
+    change_sub.add_parser("check", parents=[common], help="校验变更单与资产清单的双向引用")
 
     p_numbers = sub.add_parser("numbers", parents=[common], help="数值表检查")
     numbers_sub = p_numbers.add_subparsers(dest="num_cmd", metavar="<动作>", required=True)
@@ -1656,6 +1927,8 @@ def dispatch(args) -> int:
         return cmd_doc_check(args, root)
     if args.cmd == "gate":
         return cmd_gate(args, root)
+    if args.cmd == "change":
+        return cmd_change(args, root)
     if args.cmd == "numbers":
         return cmd_numbers(args, root)
     if args.cmd == "manifest":
