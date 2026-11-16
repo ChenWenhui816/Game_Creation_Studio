@@ -1,7 +1,7 @@
 ; Inno Setup 6 script for Personal_Game_Studio_UE
 ; Build: build/build_installer.ps1
 #ifndef AppVersion
-  #define AppVersion "0.7.0"
+  #define AppVersion "0.7.1"
 #endif
 #define AppName "Personal Game Studio UE"
 #define AppExe "Personal_Game_Studio_UE.exe"

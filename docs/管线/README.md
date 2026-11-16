@@ -14,6 +14,13 @@
 | 06 | 内容生产 | Content Production | G6 全流程通关 |
 | 07 | 上线与发行 | Release & Publishing | G7 上线清单 |
 
+## 角色、路由与来源
+
+- 角色：agents/README.md
+- 路由：router/SKILL.md
+- 参考库吸收：docs/参考库与能力映射.md
+- 运行手册：docs/工作室流程目录.md
+
 ## 先读什么
 
 1. 先读当前管线的 README（本目录）；

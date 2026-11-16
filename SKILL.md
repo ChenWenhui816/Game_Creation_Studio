@@ -5,7 +5,8 @@ description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控�
 > English entry: [SKILL.en.md](SKILL.en.md) ｜ 中文入口：本文件
 > 可视化控制台：`python scripts/gameconsole.py serve`（说明见 `docs/控制台使用指南.md`）
 > 桌面版：`python scripts/console_app.py`（构建见 `docs/桌面版.md`）
-> 工作室 CLI：`python scripts/studio.py doctor|explain|next`（说明见 `docs/管线/README.md`）
+> 工作室 CLI：`python scripts/studio.py doctor|explain|next|route`（说明见 `docs/管线/README.md`）
+> 角色：`agents/README.md` ｜ 路由：`router/SKILL.md` ｜ 参考来源：`docs/参考库与能力映射.md` ｜ 运行手册：`docs/工作室流程目录.md`
 > MCP 工具总线：`python scripts/mcp_gateway.py`（说明见 `mcp/README.md`）
 ---
 

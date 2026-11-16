@@ -25,6 +25,11 @@ class StudioTests(unittest.TestCase):
         for token in ("00_立项", "02_剧本", "07_上线与发行"):
             self.assertIn(token, result.stdout)
 
+    def test_route(self):
+        result = run(str(ROOT / "scripts" / "studio.py"), "route", "给主角加一段追逐戏，要分镜和配音")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("P2", result.stdout)
+
     def test_explain(self):
         result = run(str(ROOT / "scripts" / "studio.py"), "explain", "02")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

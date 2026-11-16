@@ -43,6 +43,44 @@ def cmd_pipelines():
     print("\n用法 / Usage: python scripts/studio.py explain 02")
 
 
+
+ROUTE_RULES = [
+    ("P0", ["立项", "范围", "想法", "平台", "concept", "scope"], "00_立项"),
+    ("P1", ["GDD", "标准", "数值", "技术方案", "art bible", "standards"], "01_标准"),
+    ("P2", ["剧本", "故事", "角色", "台词", "场景", "镜头", "分镜", "script", "story", "storyboard"], "02_剧本"),
+    ("P3", ["白模", "UE", "工程", "蓝图", "性能", "输入", "whitebox", "blueprint", "unreal"], "03_白模与技术"),
+    ("P4", ["美术", "资产", "Blender", "贴图", "UI", "PV", "视频", "art", "asset", "video"], "04_美术与视频"),
+    ("P5", ["音乐", "音效", "配音", "混音", "Wwise", "MetaSounds", "music", "audio", "voice"], "05_音乐与音频"),
+    ("P6", ["关卡", "敌人", "Boss", "任务", "收集", "内容", "level", "enemy", "content"], "06_内容生产"),
+    ("P7", ["打包", "Steam", "主机", "商店", "认证", "发布", "release", "store", "console"], "07_上线与发行"),
+]
+
+
+def cmd_route(text, as_json=False):
+    text = (text or "").lower()
+    scores = []
+    for order, (stage, keywords, folder) in enumerate(ROUTE_RULES):
+        score = sum(1 for kw in keywords if kw.lower() in text)
+        if score:
+            scores.append((score, stage, folder, order))
+    scores.sort(key=lambda item: (-item[0], item[3]))
+    if not scores:
+        result = {"stage": "", "pipeline": "", "next": "需要澄清：这是哪条管线？"}
+    else:
+        score, stage, folder, order = scores[0]
+        result = {
+            "stage": stage,
+            "pipeline": folder,
+            "next": "先读 docs/管线/%s/README.md，再跑对应闸门" % folder,
+        }
+    if as_json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print("请求 / Request:", text)
+        print("管线 / Pipeline:", result.get("stage"), result.get("pipeline"))
+        print("下一步 / Next:", result.get("next"))
+    return 0
+
 def _pipeline(code):
     for item in PIPELINES:
         if code in (item[0], item[1], item[2], item[3]):
@@ -132,6 +170,9 @@ def main(argv=None):
     parser.add_argument("--version", action="version", version=version.VERSION)
     sub = parser.add_subparsers(dest="cmd")
     sub.add_parser("pipelines", help="列出 8 条管线")
+    p_route = sub.add_parser("route", help="按请求路由到管线")
+    p_route.add_argument("text")
+    p_route.add_argument("--json", action="store_true")
     p_explain = sub.add_parser("explain", help="解释某条管线")
     p_explain.add_argument("code")
     p_doctor = sub.add_parser("doctor", help="检查环境")
@@ -142,6 +183,8 @@ def main(argv=None):
     if args.cmd == "pipelines":
         cmd_pipelines()
         return 0
+    if args.cmd == "route":
+        return cmd_route(args.text, args.json)
     if args.cmd == "explain":
         return cmd_explain(args.code)
     if args.cmd == "doctor":

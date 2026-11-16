@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-17
+
+### Added
+
+- 6 个可切换工作室角色：Producer / Design / Tech / Art / Audio / QA-Release。
+- router/SKILL.md：8 管线请求路由；studio.py route 关键词路由。
+- docs/参考库与能力映射.md：明确 Donchitos / gamedev / agency / Superpowers 吸收与未采用项。
+- docs/工作室流程目录.md：8 管线 × 6 角色 × 冲刺/里程碑/周节奏。
+- 角色职责、禁止项、交接与 English Summary。
+
 ## [0.7.0] - 2026-11-17
 
 ### Added
