@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-17
+
+### Fixed
+
+- P0 冻结后自动生成交接包，并把 P0 一句话/世界/主角/对抗者/体量播种到 P1 GDD。
+- 冻结后网页弹窗展示交接包，可复制给当前 agent。
+- 新增 agent_bridge.py：监听 handoff 并调用外部 agent CLI；桌面版读取 .gameconsole/agent.json 自动启动。
+- 文档填写区：黄色【待填】高亮、固定 H2/H3 灰锁、字段面板直接填入。
+- P0 handoff 体量/平台/主角抽取修正。
+
 ## [0.7.1] - 2026-11-17
 
 ### Added

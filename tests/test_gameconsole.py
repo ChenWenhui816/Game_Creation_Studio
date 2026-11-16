@@ -192,6 +192,16 @@ class HttpTests(ConsoleBase):
         self.assertEqual(applied["status"], "applied")
         self.assertEqual(self.project.state["stages"]["P0"]["status"], "frozen")
 
+    def test_p0_handoff_seeds_p1(self):
+        self.project.save_artifact("docs/00_立项书.md", valid_brief(), None)
+        self.project.freeze("P0")
+        handoff = self.project.ensure_handoff("P0")
+        self.assertTrue((self.root / handoff["path"]).is_file())
+        self.assertIn("docs/01_游戏设计文档.md", handoff["seeded"])
+        gdd = (self.root / "docs" / "01_游戏设计文档.md").read_text(encoding="utf-8")
+        self.assertIn("P0 交接摘要", gdd)
+        self.assertIn("测试项目", gdd)
+
     def test_evidence_wall(self):
         folder = self.root / "docs" / "evidence"
         folder.mkdir(parents=True, exist_ok=True)

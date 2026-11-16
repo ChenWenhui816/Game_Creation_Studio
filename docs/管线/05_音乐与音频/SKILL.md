@@ -6,7 +6,7 @@ inputs: 剧本/台词 | 分镜 cue | 美术氛围 | 平台/响度标准
 outputs: 主题/stems | 音效库 | 配音/多语言 | 混音/母带 | MetaSounds/Wwise 集成
 gates: G5 音频可集成
 owner: studio
-version: 0.7.1
+version: 0.7.2
 ---
 
 # 05 · 音乐与音频 · Agent Contract

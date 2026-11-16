@@ -6,7 +6,7 @@ inputs: 立项书 | GDD 核心循环 | 世界观/角色想法
 outputs: docs/14_剧本圣经.md | docs/15_分镜与镜头表.md | 场景/镜头/台词/配音 ID
 gates: G2 剧本可拍
 owner: studio
-version: 0.7.1
+version: 0.7.2
 ---
 
 # 02 · 剧本与叙事 · Agent Contract

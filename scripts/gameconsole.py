@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.1）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.2）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的 8 条管线、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.7.1"
+CONSOLE_VERSION = _version.VERSION if _version else "0.7.2"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -887,6 +887,129 @@ class Project:
         self.write_stage_readme(stage_id)
         return gate
 
+
+    def _brief_facts(self) -> dict:
+        path = self.root / "docs" / "00_立项书.md"
+        text = read_text(path) if path.is_file() else ""
+        facts = {"name": self.state.get("project", {}).get("name", ""), "one_sentence": "",
+                 "world": "", "protagonist": "", "antagonist": "", "levels": "",
+                 "total_time": "", "platform": "", "art_reference": "", "no_do": ""}
+
+        def row_value(key):
+            for line in text.splitlines():
+                if not line.strip().startswith("|"):
+                    continue
+                cells = [c.strip() for c in line.strip().strip("|").split("|")]
+                if len(cells) >= 2 and (cells[0] == key or cells[0].startswith(key)):
+                    return cells[1]
+            return ""
+
+        facts["platform"] = row_value("目标平台") or facts["platform"]
+        facts["total_time"] = row_value("总时长") or row_value("单关时长")
+        facts["levels"] = row_value("关卡数")
+        facts["no_do"] = "见 docs/00_立项书.md 的「不做清单」"
+        start = text.find("## 一句话描述")
+        if start >= 0:
+            body = text[start + len("## 一句话描述"):]
+            body = body.split("##", 1)[0]
+            for line in body.splitlines():
+                line = line.strip()
+                if line and not line.startswith("|"):
+                    facts["one_sentence"] = line
+                    break
+        facts["world"] = row_value("时间与地点")
+        facts["protagonist"] = row_value("主角身份")
+        facts["antagonist"] = row_value("对抗者")
+        facts["art_reference"] = "P0 对标/美术：见 docs/00_立项书.md 三个对标"
+        return facts
+
+    def _handoff_prompt(self, from_stage: str, to_stage: str, facts: dict) -> str:
+        target = STAGE_BY_ID[to_stage]
+        docs = "\n".join("- " + rel for rel in target["docs"])
+        return (
+            "你正在接手 %s → %s（%s）。\n\n"
+            "上一阶段 %s 已冻结。P0 立项事实：\n"
+            "- 项目：%s\n- 一句话：%s\n- 平台：%s\n- 体量：%s 关 / %s\n"
+            "- 世界：%s\n- 主角：%s\n- 对抗者：%s\n"
+            "- 不做：%s\n\n"
+            "先读：docs/管线/%s/README.md 与 docs/管线/%s/SKILL.md。\n"
+            "本阶段文档：\n%s\n\n"
+            "任务：\n"
+            "1. 用 P0 的事实更新 %s 的文档（不要把 P0 原文当唯一真相；按模板展开）。\n"
+            "2. 逐项清掉【待填】，写可判定内容；保留【示例】可改。\n"
+            "3. 跑闸门：python scripts/gamecheck.py %s --root .\n"
+            "4. 交交付单 + 证据；待决策不超过 3 条。\n"
+            "5. 不要跳过 P0 已冻结的范围/不做清单。\n"
+        ) % (from_stage, to_stage, target["name"], from_stage,
+             facts.get("name", ""), facts.get("one_sentence", ""), facts.get("platform", ""),
+             facts.get("levels", ""), facts.get("total_time", ""), facts.get("world", ""),
+             facts.get("protagonist", ""), facts.get("antagonist", ""), facts.get("no_do", ""),
+             target["folder"], target["folder"], docs, target["name"],
+             " ".join(target["gate"]))
+
+    def _seed_p1(self) -> list:
+        facts = self._brief_facts()
+        changed = []
+        marker = "<!-- p0-handoff -->"
+        gdd = self.root / "docs" / "01_游戏设计文档.md"
+        if gdd.is_file() and not self.is_locked("docs/01_游戏设计文档.md"):
+            text = read_text(gdd)
+            replacements = {
+                "《【项目名】》": "《%s》" % facts["name"],
+                "| 一句话 | 【待填】≤180 字，与立项书一致 |": "| 一句话 | %s |" % facts["one_sentence"],
+                "| 单次游玩 | 【待填】分钟 |": "| 单次游玩 | %s |" % facts["total_time"],
+                "| 世界设定 | 【待填】时间、地点、一条硬规则（例：站内氧气 6 小时耗尽） |": "| 世界设定 | %s |" % facts["world"],
+                "| 主角 | 【待填】身份 + 缺陷 + 目标 |": "| 主角 | %s |" % facts["protagonist"],
+                "| 对抗者 | 【待填】出现位置 + 外观特征 |": "| 对抗者 | %s |" % facts["antagonist"],
+            }
+            for old, new in replacements.items():
+                if old in text and new:
+                    text = text.replace(old, new)
+            if marker not in text:
+                text += "\n\n%s\n## P0 交接摘要\n\n| 项 | 值 |\n|---|---|\n| 一句话 | %s |\n| 平台 | %s |\n| 体量 | %s 关 / %s |\n" % (
+                    marker, facts["one_sentence"], facts["platform"], facts["levels"], facts["total_time"])
+            gdd.write_text(text, encoding="utf-8")
+            changed.append("docs/01_游戏设计文档.md")
+        summary = "\n\n## P0 交接摘要\n\n- 一句话：%s\n- 平台：%s\n- 体量：%s 关 / %s\n- 不做：%s\n" % (
+            facts["one_sentence"], facts["platform"], facts["levels"], facts["total_time"], facts["no_do"])
+        for rel in ("docs/02_美术圣经.md", "docs/03_技术方案.md"):
+            path = self.root / rel
+            if path.is_file() and not self.is_locked(rel):
+                text = read_text(path)
+                if marker not in text:
+                    text += "\n\n" + marker + summary
+                    path.write_text(text, encoding="utf-8")
+                    changed.append(rel)
+        if changed:
+            self.audit("handoff.seed", "P0 -> P1", {"files": changed})
+        return changed
+
+    def build_handoff(self, from_stage: str, to_stage: str, apply_seed: bool = True) -> dict:
+        target = STAGE_BY_ID[to_stage]
+        facts = self._brief_facts()
+        prompt = self._handoff_prompt(from_stage, to_stage, facts)
+        folder = self.console / "handoff"
+        folder.mkdir(parents=True, exist_ok=True)
+        name = "%s_%s_to_%s.md" % (stamp(), from_stage, to_stage)
+        path = folder / name
+        path.write_text("# 交接包 %s → %s\n\n%s\n" % (from_stage, to_stage, prompt), encoding="utf-8")
+        seeded = self._seed_p1() if from_stage == "P0" and to_stage == "P1" and apply_seed else []
+        self.state["handoff"] = {"from": from_stage, "to": to_stage,
+                                 "path": rel_posix(path, self.root), "created": now_iso(),
+                                 "seeded": seeded}
+        self.audit("handoff.create", "%s -> %s" % (from_stage, to_stage), {"path": rel_posix(path, self.root)})
+        self.save_state()
+        return {"from": from_stage, "to": to_stage, "path": rel_posix(path, self.root),
+                "prompt": prompt, "seeded": seeded, "docs": target["docs"],
+                "gate": " ".join(["gamecheck.py"] + target["gate"])}
+
+    def ensure_handoff(self, stage_id: str) -> dict:
+        nxt = self.next_stage(stage_id)
+        if not nxt:
+            raise ConsoleError("已是最后阶段", 409)
+        if self.stage_status(stage_id) != "frozen":
+            raise ConsoleError("当前阶段未冻结，不能生成交接包", 409)
+        return self.build_handoff(stage_id, nxt)
     def freeze(self, stage_id: str) -> dict:
         if stage_id != self.state.get("current_stage"):
             raise ConsoleError("只能冻结当前阶段", 400)
@@ -920,8 +1043,12 @@ class Project:
                    {"snapshot": rel_posix(snap, self.root), "files": len(files)})
         self.save_state()
         self.write_stage_readme(stage_id)
+        handoff = None
+        nxt = self.next_stage(stage_id)
+        if nxt:
+            handoff = self.build_handoff(stage_id, nxt)
         return {"stage": stage_id, "snapshot": rel_posix(snap, self.root), "files": files,
-                "frozen_at": freeze_data["frozen_at"]}
+                "frozen_at": freeze_data["frozen_at"], "handoff": handoff}
 
     def next_stage_action(self, stage_id: str) -> dict:
         if stage_id != self.state.get("current_stage"):
@@ -1205,6 +1332,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._send(200, data, ctype)
             elif path == "/api/stage":
                 self._ok(self._project().stage_detail(query.get("id", ["P0"])[0]))
+            elif path == "/api/handoff":
+                self._ok(self._project().ensure_handoff(query.get("stage", ["P0"])[0]))
             elif path == "/api/config":
                 self._project()
                 self._ok({"root": str(self.server.project.root),
@@ -1426,6 +1555,13 @@ def cmd_submit(args):
     return 0
 
 
+
+def cmd_handoff(args):
+    project = Project(Path(args.project))
+    result = project.ensure_handoff(args.stage)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="gameconsole.py",
@@ -1468,6 +1604,10 @@ def build_parser():
     p.add_argument("--project", required=True)
     p.add_argument("--stage", required=True, choices=STAGE_IDS)
     p.set_defaults(func=cmd_freeze)
+    p = sub.add_parser("handoff", help="生成当前冻结阶段到下一阶段的交接包")
+    p.add_argument("--project", required=True)
+    p.add_argument("--stage", required=True, choices=STAGE_IDS)
+    p.set_defaults(func=cmd_handoff)
 
     p = sub.add_parser("next", help="进入下一阶段")
     p.add_argument("--project", required=True)

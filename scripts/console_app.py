@@ -249,6 +249,36 @@ def _shutdown_for_update() -> None:
     os._exit(0)
 
 
+
+def start_agent_bridge(project) -> None:
+    if project is None:
+        return
+    config_path = project.root / ".gameconsole" / "agent.json"
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+    command = (config.get("command") or "").strip()
+    if not command:
+        return
+    try:
+        import agent_bridge
+    except ImportError:
+        return
+    processed = project.root / ".gameconsole" / "handoff" / ".processed.json"
+    log = project.root / ".gameconsole" / "agent-bridge.log"
+
+    def loop():
+        while True:
+            try:
+                agent_bridge.run_once(project.root, command, processed, log)
+            except Exception:  # noqa: BLE001
+                pass
+            time.sleep(2)
+
+    threading.Thread(target=loop, daemon=True).start()
+    print("Agent bridge: watching", project.root / ".gameconsole" / "handoff")
+
 def show_error(text: str) -> None:
     try:
         print(text)
@@ -314,6 +344,7 @@ def main(argv=None) -> int:
     print("%s v%s" % (version.APP_NAME, version.VERSION))
     print("项目：%s" % (project.root if project else "新建项目向导"))
     print("地址：%s" % url)
+    start_agent_bridge(project)
     if args.serve_only:
         try:
             while True:

@@ -7,6 +7,7 @@ description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控�
 > 桌面版：`python scripts/console_app.py`（构建见 `docs/桌面版.md`）
 > 工作室 CLI：`python scripts/studio.py doctor|explain|next|route`（说明见 `docs/管线/README.md`）
 > 角色：`agents/README.md` ｜ 路由：`router/SKILL.md` ｜ 参考来源：`docs/参考库与能力映射.md` ｜ 运行手册：`docs/工作室流程目录.md`
+> 冻结交接：`docs/交接与Agent桥.md` ｜ agent watcher：`scripts/agent_bridge.py`
 > MCP 工具总线：`python scripts/mcp_gateway.py`（说明见 `mcp/README.md`）
 ---
 
@@ -120,7 +121,9 @@ description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控�
 | `scripts/gamecheck.py` | 闸门校验器（标准库，无依赖） |
 | `scripts/gameconsole.py` | 本地可视化控制台（新建向导/阶段/保存/冻结/下一步） |
 | `scripts/console_app.py` | 桌面版入口（pywebview/WebView2） |
-| `scripts/studio.py` | Studio CLI：pipelines/explain/doctor/next |
+| `scripts/studio.py` | Studio CLI：pipelines/explain/doctor/next/route |
+| `scripts/agent_bridge.py` | 监听交接包并调用外部 agent CLI |
+| `docs/交接与Agent桥.md` | 冻结交接包与自动派发 |
 | `scripts/mcp_gateway.py` | MCP Gateway POC：stdio/HTTP、权限、审计 |
 | `scripts/asset_registry.py` | 资产扫描与校验 |
 | `build/desktop.spec` | PyInstaller 打包配置 |

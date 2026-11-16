@@ -304,3 +304,20 @@ body {
 .doc-item.changed .path::after { content: " •"; color: var(--warn); }
 
 .top-actions { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* fillable vs locked */
+mark.fillable { background: rgba(251,191,36,.25); color: #fde68a; border-bottom: 1px dashed var(--warn); padding: 1px 4px; border-radius: 4px; }
+.example { color: var(--accent-2); opacity: .8; font-size: .92em; }
+h1.md-locked, h2.md-locked, h3.md-locked { border-left: 2px solid rgba(139,155,180,.25); padding-left: 8px; }
+.fill-panel { border-bottom: 1px solid var(--line); background: rgba(5,8,13,.55); padding: 10px 14px; max-height: 280px; overflow: auto; }
+.fill-help { color: var(--muted); font-size: 11px; margin-bottom: 8px; }
+.fill-lock { color: var(--warn); font-size: 12px; padding: 6px 0; }
+.fill-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fill-item { display: flex; flex-direction: column; gap: 2px; border: 1px solid rgba(251,191,36,.18); background: rgba(251,191,36,.035); border-radius: 8px; padding: 7px 8px; font-size: 11px; }
+.fill-item span { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fill-item span b { color: var(--warn); }
+.fill-item small { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fill-item input { background: #0b1018; border: 1px solid rgba(251,191,36,.25); color: var(--text); border-radius: 6px; padding: 5px 7px; font-size: 11px; }
+@media (max-width: 1100px) { .fill-list { grid-template-columns: 1fr; } }
+
+.handoff-prompt { width: 100%; min-height: 260px; background: #070a10; border: 1px solid rgba(94,234,212,.25); border-radius: 10px; color: var(--text); padding: 10px; font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; line-height: 1.6; resize: vertical; }

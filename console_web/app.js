@@ -15,6 +15,7 @@ const S = {
   preview: true,
   wizard: null,
   updateChecked: false,
+  fillOpen: true,
   time: null,
   clockTimer: null,
 };
@@ -103,6 +104,8 @@ function inlineMd(text) {
   out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
   out = out.replace(/\x60([^\x60]+)\x60/g, '<code>$1</code>');
+  out = out.replace(/【待填】/g, '<mark class="fillable">【待填】</mark>');
+  out = out.replace(/【示例】/g, '<span class="example">【示例】</span>');
   return out;
 }
 
@@ -137,7 +140,7 @@ function mdToHtml(markdown) {
     const heading = line.match(/^(#{1,6})\s+(.*)$/);
     if (heading) {
       const level = heading[1].length;
-      out.push('<h' + level + '>' + inlineMd(heading[2]) + '</h' + level + '>');
+      out.push('<h' + level + ' class="md-locked" title="固定结构：请勿删除/改名">' + inlineMd(heading[2]) + '</h' + level + '>');
       i++;
       continue;
     }
@@ -659,7 +662,8 @@ function renderStagePage() {
       return '<button class="doc-item" data-path="' + esc(doc.path) + '"><span class="dot ' + (doc.exists ? (doc.locked ? 'lock' : 'ok') : '') + '"></span><span class="path">' + esc(doc.path.replace('docs/', '')) + '</span></button>';
     }).join('') + '</div></section>' +
     '<section class="card editor-card" id="editor-card"><div class="editor-head"><div class="editor-title"><strong id="doc-title">选择左侧文档</strong><span id="doc-sub">保存后会生成版本副本</span></div>' +
-    '<div class="editor-tools"><button class="btn" id="btn-preview">预览</button><button class="btn primary" id="btn-save">保存</button></div></div>' +
+    '<div class="editor-tools"><button class="btn" id="btn-fields">填写区</button><button class="btn" id="btn-preview">预览</button><button class="btn primary" id="btn-save">保存</button></div></div>' +
+    '<div class="fill-panel" id="fill-panel" hidden></div>' +
     '<div class="editor-body" id="editor-body"><textarea id="editor" spellcheck="false" placeholder="选择左侧文档开始编辑…"></textarea><div class="preview" id="preview"></div></div></section>' +
     '<aside class="side-col">' +
     '<div class="card side-card"><h3>章节</h3><div class="outline-tools"><button class="btn tiny" id="btn-add-section">+ 章节</button><button class="btn tiny" id="btn-add-check">+ 检查项</button></div><div id="outline" class="outline"><div class="empty">选择文档后显示层级</div></div></div>' +
@@ -668,6 +672,7 @@ function renderStagePage() {
     '<div class="card side-card"><h3>闸门</h3><div class="gate-box" id="gate-box">' + gateHtml(stage) + '</div>' +
     '<div class="btn-row" style="margin-top:10px"><button class="btn" id="btn-gate">运行闸门</button>' +
     '<button class="btn primary" id="btn-freeze"' + (stage.status === 'frozen' ? ' disabled' : '') + '>冻结</button>' +
+    '<button class="btn" id="btn-handoff"' + (stage.status === 'frozen' ? '' : ' disabled') + '>交接包</button>' +
     '<button class="btn" id="btn-next"' + (stage.status === 'frozen' ? '' : ' disabled') + '>下一步</button></div></div>' +
     '<div class="card side-card"><h3>版本</h3><div id="version-box"><div class="empty">选择文档后显示版本</div></div></div>' +
     '<div class="card side-card"><h3>本地目录</h3><div class="kv"><span>阶段</span><b>stages/' + esc(stage.folder) + '</b><span>快照</span><b>' + esc(stage.snapshot || '—') + '</b></div>' +
@@ -683,8 +688,10 @@ function renderStagePage() {
   document.getElementById('btn-save').addEventListener('click', saveArtifact);
   document.getElementById('btn-gate').addEventListener('click', runGate);
   document.getElementById('btn-freeze').addEventListener('click', freezeStage);
+  document.getElementById('btn-handoff').addEventListener('click', requestHandoff);
   document.getElementById('btn-next').addEventListener('click', nextStage);
   document.getElementById('btn-preview').addEventListener('click', togglePreview);
+  document.getElementById('btn-fields').addEventListener('click', toggleFillPanel);
   document.getElementById('btn-add-section').addEventListener('click', addSection);
   document.getElementById('btn-add-check').addEventListener('click', addCheckItem);
   loadStageInsight(stage.stage.id);
@@ -796,6 +803,7 @@ function openArtifact(path) {
     title.textContent = path.replace('docs/', '');
     sub.textContent = info.locked ? '已冻结 · 需变更单' : (info.exists ? '可编辑 · 保存会生成版本' : '尚未创建');
     preview.innerHTML = mdToHtml(editor.value);
+    renderFillPanel(editor.value, info.locked);
     renderOutline(editor.value);
     document.querySelectorAll('[data-path]').forEach(function (button) {
       button.classList.toggle('active', button.getAttribute('data-path') === path);
@@ -842,6 +850,79 @@ function saveArtifact() {
   }).catch(showError);
 }
 
+
+function toggleFillPanel() {
+  const panel = document.getElementById('fill-panel');
+  if (!panel) return;
+  S.fillOpen = !S.fillOpen;
+  panel.hidden = !S.fillOpen;
+  if (S.fillOpen) {
+    const editor = document.getElementById('editor');
+    renderFillPanel(editor ? editor.value : '', editor ? editor.disabled : true);
+  }
+}
+
+function fillSectionFor(lines, lineIndex) {
+  for (let i = lineIndex; i >= 0; i--) {
+    const match = lines[i].match(/^##\s+(.+)$/);
+    if (match) return match[1].trim();
+  }
+  return '文档';
+}
+
+function renderFillPanel(content, locked) {
+  const panel = document.getElementById('fill-panel');
+  if (!panel) return;
+  panel.hidden = !S.fillOpen;
+  const text = String(content || '');
+  if (locked) {
+    panel.innerHTML = '<div class="fill-lock">已冻结：全文只读。需要修改请走变更单。</div>';
+    return;
+  }
+  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const fields = [];
+  let offset = 0;
+  lines.forEach(function (line, index) {
+    let pos = line.indexOf('【待填】');
+    while (pos >= 0) {
+      fields.push({ line: index, context: line.trim().slice(0, 90), section: fillSectionFor(lines, index), offset: offset + pos });
+      pos = line.indexOf('【待填】', pos + 1);
+    }
+    offset += line.length + 1;
+  });
+  if (!fields.length) {
+    panel.innerHTML = '<div class="fill-help">没有待填字段。黄色=待填；灰色章节=固定结构；可直接编辑 Markdown。</div>';
+    return;
+  }
+  panel.innerHTML = '<div class="fill-help">黄色=待填；灰色 H2/H3=固定结构；修改后点“保存”。</div>' +
+    '<div class="fill-list">' + fields.map(function (field, index) {
+      return '<label class="fill-item"><span><b>#' + (index + 1) + '</b> ' + esc(field.section) + ' · 第 ' + (field.line + 1) + ' 行</span>' +
+        '<small>' + esc(field.context) + '</small>' +
+        '<input data-fill-index="' + index + '" placeholder="填写这里…" autocomplete="off"></label>';
+    }).join('') + '</div>';
+  panel.querySelectorAll('[data-fill-index]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      const index = parseInt(input.getAttribute('data-fill-index'), 10);
+      const value = input.value.trim();
+      if (!value) return;
+      let count = 0;
+      const updated = text.replace(/【待填】/g, function (match) {
+        if (count === index) { count += 1; return value; }
+        count += 1;
+        return match;
+      });
+      const editor = document.getElementById('editor');
+      if (!editor) return;
+      editor.value = updated;
+      S.dirty = true;
+      const preview = document.getElementById('preview');
+      if (preview) preview.innerHTML = mdToHtml(editor.value);
+      renderOutline(editor.value);
+      renderFillPanel(editor.value, false);
+      toast('已填入字段，保存后写入版本');
+    });
+  });
+}
 function togglePreview() {
   S.preview = !S.preview;
   const body = document.getElementById('editor-body');
@@ -871,8 +952,41 @@ function freezeStage() {
   if (!confirm('冻结当前阶段？会运行闸门、生成快照并锁定文档。')) return;
   api('/api/freeze', { method: 'POST', body: { stage: S.stage.stage.id } }).then(function (result) {
     toast('已冻结 · ' + result.snapshot);
+    if (result.handoff) showHandoff(result.handoff);
     refreshStage();
   }).catch(showError);
+}
+
+
+function requestHandoff() {
+  if (!S.stage) return;
+  toast('正在生成交接包…');
+  api('/api/handoff?stage=' + encodeURIComponent(S.stage.stage.id)).then(function (handoff) {
+    showHandoff(handoff);
+  }).catch(showError);
+}
+
+function showHandoff(handoff) {
+  const seeded = (handoff.seeded || []).length ? '<p class="tag">已自动更新：' + esc(handoff.seeded.join('、')) + '</p>' : '';
+  openModal('交接包 · ' + esc(handoff.from) + ' → ' + esc(handoff.to),
+    '<p class="tag">交接文件：' + esc(handoff.path) + '</p>' +
+    seeded +
+    '<p>把下面内容交给当前 agent；如果已启动 agent_bridge，它会自动读取交接文件。</p>' +
+    '<textarea id="handoff-prompt" class="handoff-prompt" readonly></textarea>' +
+    '<div class="btn-row"><button class="btn primary" id="btn-copy-handoff">复制给 Agent</button>' +
+    '<button class="btn" id="btn-close-handoff">关闭</button></div>' +
+    '<p class="tag">agent_bridge：python scripts/agent_bridge.py watch --project . --command "..."</p>');
+  const area = document.getElementById('handoff-prompt');
+  if (area) area.value = handoff.prompt || '';
+  const copy = document.getElementById('btn-copy-handoff');
+  if (copy) copy.addEventListener('click', function () {
+    const text = area ? area.value : '';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('已复制交接包'); }).catch(function () { area.select(); });
+    } else if (area) { area.select(); document.execCommand('copy'); toast('已复制交接包'); }
+  });
+  const close = document.getElementById('btn-close-handoff');
+  if (close) close.addEventListener('click', closeModal);
 }
 
 function nextStage() {
@@ -929,7 +1043,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.7.1', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.7.2', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';
