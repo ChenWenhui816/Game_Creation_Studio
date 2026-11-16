@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.5.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -32,6 +32,19 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.5.0 新增：安装包、自动更新与控制台增强
+
+| 能力 | 入口 | 说明 |
+|---|---|---|
+| Inno Setup 安装包 | `build/installer.iss` + `build/build_installer.ps1` | 开始菜单、卸载、可选桌面快捷方式，安装到用户目录 |
+| 代码签名钩子 | `build/sign.ps1` + GitHub Secrets | 有证书则签 exe/setup；无证书自动跳过，不阻塞构建 |
+| App 自动更新 | 控制台「检查更新」→ 下载 → 重启替换 | 校验大小/SHA-256，退出后 PowerShell 替换并重启 |
+| 变更单向导 | 控制台「变更单」 | 冻结后走变更单解锁；再次冻结自动标记生效 |
+| 章节/检查项层级 | 阶段右侧「章节」面板 | 解析 H2/H3 与 checkbox，可跳转、勾选、追加 |
+| 证据墙 | 控制台「证据墙」 | 读取 `docs/evidence/` 的截图/录屏/文件 |
+
+安装包与签名：`docs/安装包与签名.md`；桌面版：`docs/桌面版.md`。
 
 ## v0.4.0 新增：桌面版
 
@@ -137,7 +150,7 @@ python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
-> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.4.0`）。
+> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.5.0`）。
 
 ## 命令速查
 
@@ -190,6 +203,8 @@ Personal_Game_Studio_UE/
 ├─ console_web/              # 控制台前端（HTML/CSS/JS，无构建）
 ├─ build/desktop.spec        # PyInstaller 打包配置
 ├─ build/build_desktop.ps1   # Windows 一键构建
+├─ build/installer.iss       # Inno Setup 安装包
+├─ build/sign.ps1            # 可选代码签名
 ├─ requirements-desktop.txt  # 桌面版构建依赖
 ├─ tests/                    # 校验器与脚本单元测试
 ├─ docs/
@@ -197,6 +212,7 @@ Personal_Game_Studio_UE/
 │  ├─ 维护规范.md            # 章节约定/改动联动清单
 │  ├─ 控制台使用指南.md      # 控制台启动、保存/冻结/下一步、交接
 │  ├─ 桌面版.md              # 桌面版构建、分发与更新
+│  ├─ 安装包与签名.md        # Inno Setup 与代码签名
 │  ├─ UE资产导入脚本.md      # 导入脚本使用说明
 │  ├─ 每日截图巡览.md        # 巡览生成器使用说明
 │  └─ GitHub发布指南.md      # 发布、迭代、安装、FAQ
@@ -213,7 +229,7 @@ Personal_Game_Studio_UE/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.4.0`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.5.0`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

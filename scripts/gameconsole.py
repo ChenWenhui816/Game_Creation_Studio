@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.4.0）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.5.0）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的六阶段、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -56,7 +56,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.4.0"
+CONSOLE_VERSION = _version.VERSION if _version else "0.5.0"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -163,7 +163,7 @@ DOC_STAGE = {
     "docs/13_多语言商店素材清单.md": "P5",
     "docs/09_变更单": None,
 }
-STATUSES = ("drafting", "review", "frozen", "blocked")
+STATUSES = ("drafting", "review", "frozen", "blocked", "change")
 
 
 def _setup_stdout() -> None:
@@ -237,7 +237,10 @@ class Project:
         if self.state.get("console_version") != CONSOLE_VERSION:
             self.state["console_version"] = CONSOLE_VERSION
             self.state["skill_version"] = CONSOLE_VERSION
-            self.save_state()
+            try:
+                self.save_state()
+            except OSError:
+                pass
 
     def reload(self) -> None:
         """外部进程（agent CLI）可能更新 state.json；请求前刷新。"""
@@ -311,6 +314,7 @@ class Project:
                              "frozen_at": None, "snapshot": None,
                              "updated_at": now_iso()} for sid in STAGE_IDS},
             "submissions": [],
+            "changes": [],
         }
         write_json(console / "state.json", state)
         project = cls(path)
@@ -370,6 +374,7 @@ class Project:
         (self.console / "versions").mkdir(exist_ok=True)
         (self.console / "outbox").mkdir(exist_ok=True)
         (self.console / "inbox").mkdir(exist_ok=True)
+        (self.root / "docs" / "evidence").mkdir(parents=True, exist_ok=True)
         for item in STAGES:
             folder = self.stage_dir(item["id"])
             folder.mkdir(parents=True, exist_ok=True)
@@ -417,6 +422,61 @@ class Project:
         if stage is None:
             return False
         return self.stage_status(stage) == "frozen"
+
+    def changes(self):
+        return self.state.setdefault("changes", [])
+
+    def active_change(self, stage_id: str):
+        for item in reversed(self.changes()):
+            if item.get("stage") == stage_id and item.get("status") == "approved" and not item.get("applied_at"):
+                return item
+        return None
+
+    def create_change(self, stage_id: str, title: str, reason: str = "", docs=None) -> dict:
+        self.stage_def(stage_id)
+        if not title.strip():
+            raise ConsoleError("变更单标题不能为空", 400)
+        item = {
+            "id": "CHG-" + secrets.token_hex(3).upper(),
+            "stage": stage_id,
+            "title": title.strip(),
+            "reason": reason.strip(),
+            "docs": list(docs or []),
+            "status": "pending",
+            "at": now_iso(),
+        }
+        self.changes().append(item)
+        self.audit("change.create", item["id"], {"stage": stage_id, "title": item["title"]})
+        self.save_state()
+        return item
+
+    def approve_change(self, change_id: str) -> dict:
+        item = next((c for c in self.changes() if c.get("id") == change_id), None)
+        if not item:
+            raise ConsoleError("找不到变更单：%s" % change_id, 404)
+        if item.get("status") != "pending":
+            raise ConsoleError("变更单不是待审批状态", 409)
+        stage = item["stage"]
+        item["previous_status"] = self.stage_status(stage)
+        item["status"] = "approved"
+        item["approved_at"] = now_iso()
+        self.set_stage_status(stage, "change")
+        self.state["stages"][stage]["active_change"] = item["id"]
+        self.audit("change.approve", change_id, {"stage": stage})
+        self.save_state()
+        self.write_stage_readme(stage)
+        return item
+
+    def reject_change(self, change_id: str, reason: str = "") -> dict:
+        item = next((c for c in self.changes() if c.get("id") == change_id), None)
+        if not item:
+            raise ConsoleError("找不到变更单：%s" % change_id, 404)
+        item["status"] = "rejected"
+        item["rejected_at"] = now_iso()
+        item["reject_reason"] = reason
+        self.audit("change.reject", change_id, {"reason": reason})
+        self.save_state()
+        return item
 
     def _versions_index(self):
         data = read_json(self.versions_index, {"items": []})
@@ -524,6 +584,38 @@ class Project:
             raise ConsoleError("只允许修改 docs/ 下的文档", 400)
         return path
 
+    def evidence(self) -> dict:
+        folder = self.root / "docs" / "evidence"
+        items = []
+        if folder.is_dir():
+            for path in sorted(folder.rglob("*")):
+                if not path.is_file():
+                    continue
+                rel = rel_posix(path, self.root)
+                suffix = path.suffix.lower()
+                kind = "image" if suffix in (".png", ".jpg", ".jpeg", ".webp", ".gif") else (
+                    "video" if suffix in (".mp4", ".webm", ".mov") else "file")
+                items.append({
+                    "path": rel, "name": path.name, "kind": kind,
+                    "size": path.stat().st_size,
+                    "mtime": datetime.fromtimestamp(path.stat().st_mtime).strftime("%Y-%m-%dT%H:%M:%S"),
+                })
+        return {"folder": "docs/evidence", "items": items}
+
+    def evidence_file(self, rel: str) -> tuple:
+        if not rel.startswith("docs/evidence/"):
+            raise ConsoleError("只允许读取 docs/evidence/ 下的证据", 400)
+        path = (self.root / rel).resolve()
+        folder = (self.root / "docs" / "evidence").resolve()
+        try:
+            path.relative_to(folder)
+        except ValueError:
+            raise ConsoleError("非法证据路径", 400)
+        if not path.is_file():
+            raise ConsoleError("证据文件不存在", 404)
+        ctype = mimetypes.guess_type(str(path))[0] or "application/octet-stream"
+        return path.read_bytes(), ctype
+
     def artifact_info(self, rel: str) -> dict:
         path = self._check_rel(rel)
         if not path.is_file():
@@ -610,6 +702,11 @@ class Project:
         freeze_data = {"stage": stage_id, "frozen_at": now_iso(),
                        "skill_version": CONSOLE_VERSION, "gate": gate, "files": files}
         write_json(snap / "freeze.json", freeze_data)
+        change = self.active_change(stage_id)
+        if change:
+            change["status"] = "applied"
+            change["applied_at"] = freeze_data["frozen_at"]
+            self.state["stages"][stage_id].pop("active_change", None)
         self.state["stages"][stage_id].update({
             "status": "frozen", "frozen_at": freeze_data["frozen_at"],
             "snapshot": rel_posix(snap, self.root), "gate": gate,
@@ -713,13 +810,17 @@ class Project:
                 "docs": docs,
             })
         pending = [s for s in self.state.get("submissions", []) if s.get("status") == "pending"]
+        pending_changes = [c for c in self.changes() if c.get("status") == "pending"]
         return {
             "project": self.state.get("project", {}),
             "current_stage": self.state.get("current_stage", "P0"),
             "stages": stages,
             "pending_submissions": len(pending),
             "submissions": self.state.get("submissions", []),
+            "changes": self.changes(),
+            "pending_changes": len(pending_changes),
             "console_version": CONSOLE_VERSION,
+            "skill_version": self.state.get("skill_version", CONSOLE_VERSION),
             "root": str(self.root),
         }
 
@@ -754,6 +855,7 @@ class Project:
             "snapshot": state.get("snapshot"), "docs": docs,
             "folder": item["folder"],
             "next_stage": self.next_stage(stage_id),
+            "active_change": self.active_change(stage_id),
         }
 
     def audit_tail(self, limit: int = 80):
@@ -882,6 +984,13 @@ class Handler(BaseHTTPRequestHandler):
                 self._ok({"path": rel, "versions": self._project().versions(rel)})
             elif path == "/api/audit":
                 self._ok({"items": self._project().audit_tail(80)})
+            elif path == "/api/changes":
+                self._ok({"items": self._project().changes()})
+            elif path == "/api/evidence":
+                self._ok(self._project().evidence())
+            elif path == "/api/evidence/file":
+                data, ctype = self._project().evidence_file(query.get("path", [""])[0])
+                self._send(200, data, ctype)
             elif path == "/api/stage":
                 self._ok(self._project().stage_detail(query.get("id", ["P0"])[0]))
             elif path == "/api/config":
@@ -951,6 +1060,27 @@ class Handler(BaseHTTPRequestHandler):
                 self._ok(project.resolve_submission(
                     payload.get("id", ""), bool(payload.get("accepted")),
                     payload.get("reason", "")))
+            elif path == "/api/change/create":
+                project = self._project()
+                self._ok(project.create_change(
+                    payload.get("stage", ""), payload.get("title", ""),
+                    payload.get("reason", ""), payload.get("docs", [])))
+            elif path == "/api/change/approve":
+                project = self._project()
+                self._ok(project.approve_change(payload.get("id", "")))
+            elif path == "/api/change/reject":
+                project = self._project()
+                self._ok(project.reject_change(payload.get("id", ""), payload.get("reason", "")))
+            elif path == "/api/update/download":
+                callback = getattr(self.server, "update_download", None)
+                if not callable(callback):
+                    raise ConsoleError("当前运行模式不支持应用内自动更新；请使用桌面版", 501)
+                self._ok(callback())
+            elif path == "/api/update/apply":
+                callback = getattr(self.server, "update_apply", None)
+                if not callable(callback):
+                    raise ConsoleError("当前运行模式不支持应用内自动更新；请使用桌面版", 501)
+                self._ok(callback())
             else:
                 self._json(404, {"ok": False, "error": "未知接口：%s" % path})
         except ConsoleError as exc:

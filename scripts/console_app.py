@@ -19,6 +19,7 @@ import argparse
 import json
 import os
 import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -133,6 +134,7 @@ def wait_health(url: str, timeout: float = 10.0) -> bool:
 
 
 def open_window(url: str) -> None:
+    global _WINDOW
     try:
         import webview  # type: ignore
     except ImportError:
@@ -152,7 +154,9 @@ def open_window(url: str) -> None:
             min_size=(1100, 700),
             text_select=True,
         )
+        _WINDOW = window
         webview.start(debug=False, private_mode=False)
+        _WINDOW = None
     except Exception as exc:  # noqa: BLE001 —— WebView2 缺失时退回浏览器
         show_error("桌面窗口启动失败：%s\n改用系统浏览器：%s" % (exc, url))
         webbrowser.open(url)
@@ -161,6 +165,88 @@ def open_window(url: str) -> None:
                 time.sleep(1)
         except KeyboardInterrupt:
             return
+
+
+
+_WINDOW = None
+_SERVER = None
+
+
+def updates_dir() -> Path:
+    path = local_dir() / "updates"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def download_app_update() -> dict:
+    info = version.check_latest()
+    if not info.get("ok"):
+        raise RuntimeError("检查更新失败：%s" % info.get("error", "网络不可用"))
+    if not info.get("update_available"):
+        raise RuntimeError("当前已是最新版本 %s" % version.VERSION)
+    asset = info.get("asset")
+    if not asset:
+        raise RuntimeError("最新 Release 没有可下载的 zip")
+    target = version.download_update(asset, updates_dir())
+    return {"ok": True, "version": info.get("latest"), "zip": target,
+            "size": asset.get("size"), "url": info.get("url")}
+
+
+def _apply_update_script(source: Path, target: Path, exe: Path, pid: int, script: Path) -> None:
+    content = (
+        "param()\r\n"
+        "$ErrorActionPreference = 'Stop'\r\n"
+        "Wait-Process -Id %d -Timeout 60 -ErrorAction SilentlyContinue\r\n"
+        "Start-Sleep -Milliseconds 800\r\n"
+        "Copy-Item -Path (Join-Path '%s' '*') -Destination '%s' -Recurse -Force\r\n"
+        "Start-Process -FilePath '%s'\r\n"
+    ) % (pid, str(source).replace("'", "''"), str(target).replace("'", "''"),
+         str(exe).replace("'", "''"))
+    script.write_text(content, encoding="utf-8-sig")
+
+
+def apply_app_update() -> dict:
+    zips = sorted(updates_dir().glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if not zips:
+        raise RuntimeError("没有已下载的更新包，请先点“下载并安装”")
+    zip_path = zips[0]
+    staging = updates_dir() / "staging"
+    if staging.exists():
+        shutil.rmtree(staging, ignore_errors=True)
+    staging.mkdir(parents=True, exist_ok=True)
+    import zipfile
+    with zipfile.ZipFile(zip_path) as archive:
+        archive.extractall(staging)
+    source = staging / version.APP_NAME
+    if not source.is_dir():
+        children = [item for item in staging.iterdir() if item.is_dir()]
+        source = children[0] if children else staging
+    target = Path(sys.executable).resolve().parent
+    exe = target / (version.APP_NAME + ".exe")
+    script = updates_dir() / "apply_update.ps1"
+    _apply_update_script(source, target, exe, os.getpid(), script)
+    flags = 0x00000008 | 0x00000200  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+    subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                      "-WindowStyle", "Hidden", "-File", str(script)],
+                     creationflags=flags, close_fds=True)
+    threading.Timer(0.8, _shutdown_for_update).start()
+    return {"ok": True, "restarting": True, "version": version.VERSION}
+
+
+def _shutdown_for_update() -> None:
+    global _WINDOW, _SERVER
+    try:
+        if _WINDOW is not None:
+            _WINDOW.destroy()
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        if _SERVER is not None:
+            _SERVER.shutdown()
+            _SERVER.server_close()
+    except Exception:  # noqa: BLE001
+        pass
+    os._exit(0)
 
 
 def show_error(text: str) -> None:
@@ -212,7 +298,11 @@ def main(argv=None) -> int:
         settings["last_project"] = str(project.root)
         save_settings(settings)
 
+    global _SERVER
     server = gameconsole.ConsoleServer(("127.0.0.1", args.port), project)
+    _SERVER = server
+    server.update_download = download_app_update
+    server.update_apply = apply_app_update
     port = server.server_address[1]
     url = "http://127.0.0.1:%d/" % port
     thread = threading.Thread(target=server.serve_forever, daemon=True)

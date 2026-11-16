@@ -1,4 +1,4 @@
-# 构建 Windows 桌面版（需要 Python 3.10+）
+﻿# 构建 Windows 桌面版（需要 Python 3.10+）
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root

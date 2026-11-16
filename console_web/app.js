@@ -14,9 +14,10 @@ const S = {
   dirty: false,
   preview: true,
   wizard: null,
+  updateChecked: false,
 };
 
-const STATUS_LABEL = { drafting: '草稿', review: '待验收', frozen: '已冻结', blocked: '阻塞' };
+const STATUS_LABEL = { drafting: '草稿', review: '待验收', frozen: '已冻结', blocked: '阻塞', change: '变更中' };
 const GATE_LABEL = { pass: '通过', fail: '未通过', null: '未运行' };
 
 function esc(value) {
@@ -80,6 +81,7 @@ function stageKind(status) {
   if (status === 'frozen') return 'ok';
   if (status === 'review') return 'warn';
   if (status === 'blocked') return 'danger';
+  if (status === 'change') return 'warn';
   return '';
 }
 
@@ -192,6 +194,8 @@ function renderTopbar() {
     '<div class="top-actions">' +
     (currentStage ? pill('当前 ' + current + ' · ' + (STATUS_LABEL[currentStage.status] || ''), '') : '') +
     '<button class="btn" id="btn-inbox">收件箱' + (state && state.pending_submissions ? ' ' + state.pending_submissions : '') + '</button>' +
+    '<button class="btn" id="btn-changes">变更单' + (state && state.pending_changes ? ' ' + state.pending_changes : '') + '</button>' +
+    '<button class="btn" id="btn-evidence">证据墙</button>' +
     '<button class="btn" id="btn-new">新建项目</button>' +
     '<button class="btn" id="btn-update">检查更新</button>' +
     '<button class="btn" id="btn-refresh">刷新</button>' +
@@ -222,6 +226,10 @@ function renderShell() {
   if (inbox) inbox.addEventListener('click', function () { location.hash = '#/inbox'; });
   const createNew = document.getElementById('btn-new');
   if (createNew) createNew.addEventListener('click', function () { location.hash = '#/new'; });
+  const changes = document.getElementById('btn-changes');
+  if (changes) changes.addEventListener('click', openChanges);
+  const evidence = document.getElementById('btn-evidence');
+  if (evidence) evidence.addEventListener('click', openEvidence);
   const refresh = document.getElementById('btn-refresh');
   if (refresh) refresh.addEventListener('click', function () { boot(); });
   const update = document.getElementById('btn-update');
@@ -233,11 +241,203 @@ function checkUpdate() {
   api('/api/update').then(function (info) {
     if (!info.ok) { toast('检查失败：' + (info.error || '网络不可用'), true); return; }
     const state = info.update_available ? '发现新版本' : '已是最新';
-    openModal('版本检查 · ' + state,
-      '<div class="kv"><span>当前</span><b>' + esc(info.current) + '</b><span>最新</span><b>' + esc(info.latest || '—') + '</b></div>' +
-      '<p style="margin-top:12px">下载地址：<a href="' + esc(info.url) + '" target="_blank" rel="noreferrer">' + esc(info.url) + '</a></p>' +
-      '<p class="tag">更新只提示，不自动覆盖项目文件。</p>');
+    let body = '<div class="kv"><span>当前</span><b>' + esc(info.current) + '</b><span>最新</span><b>' + esc(info.latest || '—') + '</b></div>' +
+      '<p style="margin-top:12px">下载地址：<a href="' + esc(info.url) + '" target="_blank" rel="noreferrer">' + esc(info.url) + '</a></p>';
+    if (info.update_available && info.asset) {
+      body += '<div class="btn-row" style="margin-top:14px"><button class="btn primary" id="btn-download-update">下载并安装</button></div>' +
+        '<p class="tag">下载后需要重启 App 完成替换；项目文件不受影响。</p>';
+    } else {
+      body += '<p class="tag">更新只提示，不自动覆盖项目文件。</p>';
+    }
+    openModal('版本检查 · ' + state, body);
+    const download = document.getElementById('btn-download-update');
+    if (download) download.addEventListener('click', downloadUpdate);
   }).catch(showError);
+}
+
+function autoCheckUpdate() {
+  api('/api/update').then(function (info) {
+    if (info.ok && info.update_available) {
+      toast('发现新版本 v' + info.latest + '，点右上角「检查更新」下载');
+    }
+  }).catch(function () { /* 启动检查静默失败 */ });
+}
+
+function downloadUpdate() {
+  toast('正在下载更新包…');
+  api('/api/update/download', { method: 'POST' }).then(function (info) {
+    openModal('更新已下载',
+      '<div class="kv"><span>版本</span><b>' + esc(info.version || '') + '</b><span>文件</span><b>' + esc(info.zip || '') + '</b></div>' +
+      '<p style="margin-top:12px">安装会退出 App、替换程序并自动重启。</p>' +
+      '<div class="btn-row"><button class="btn primary" id="btn-apply-update">立即重启更新</button></div>');
+    const apply = document.getElementById('btn-apply-update');
+    if (apply) apply.addEventListener('click', applyUpdate);
+  }).catch(showError);
+}
+
+function applyUpdate() {
+  if (!confirm('现在退出并安装更新？未保存的文档修改会丢失。')) return;
+  toast('正在退出并安装更新…');
+  api('/api/update/apply', { method: 'POST' }).then(function () {
+    toast('App 即将重启，请稍候');
+  }).catch(showError);
+}
+
+
+function changeStatusLabel(status) {
+  return ({ pending: '待审批', approved: '已批准', rejected: '已拒绝', applied: '已生效' })[status] || status;
+}
+
+function openChanges() {
+  api('/api/changes').then(function (data) {
+    const items = data.items || [];
+    const stages = (S.state && S.state.stages) || [];
+    const options = stages.map(function (stage) {
+      return '<option value="' + esc(stage.id) + '"' + (S.state && stage.id === S.state.current_stage ? ' selected' : '') + '>' +
+        esc(stage.id + ' · ' + stage.name) + '</option>';
+    }).join('');
+    const list = items.length ? items.slice().reverse().map(function (item) {
+      return '<li class="change-item"><div><b>' + esc(item.id) + '</b> · ' + esc(item.stage) + ' · ' + esc(item.title) +
+        '<div class="tag">' + esc(changeStatusLabel(item.status)) + ' · ' + esc(item.at) + '</div>' +
+        (item.reason ? '<p>' + esc(item.reason) + '</p>' : '') + '</div>' +
+        (item.status === 'pending' ? '<div class="btn-row"><button class="btn tiny" data-approve="' + esc(item.id) + '">批准</button>' +
+          '<button class="btn tiny" data-reject="' + esc(item.id) + '">拒绝</button></div>' : '') + '</li>';
+    }).join('') : '<li class="empty">暂无变更单</li>';
+    openModal('变更单',
+      '<div class="change-form"><label>阶段</label><select id="change-stage">' + options + '</select>' +
+      '<label>标题</label><input id="change-title" placeholder="例如：P1 增加双输入验收">' +
+      '<label>原因</label><textarea id="change-reason" rows="3" placeholder="为什么改、影响哪些文档/资产"></textarea>' +
+      '<label>影响文档（可选，逗号分隔）</label><input id="change-docs" placeholder="docs/02_美术圣经.md">' +
+      '<div class="btn-row"><button class="btn primary" id="btn-create-change">创建变更单</button></div></div>' +
+      '<h4 style="margin-top:18px">最近变更单</h4><ul class="change-list">' + list + '</ul>');
+    const create = document.getElementById('btn-create-change');
+    if (create) create.addEventListener('click', function () {
+      const docs = (document.getElementById('change-docs').value || '').split(/[,，\n]/).map(function (x) { return x.trim(); }).filter(Boolean);
+      api('/api/change/create', { method: 'POST', body: {
+        stage: document.getElementById('change-stage').value,
+        title: document.getElementById('change-title').value,
+        reason: document.getElementById('change-reason').value,
+        docs: docs
+      }}).then(function () { toast('变更单已创建'); closeModal(); boot(); }).catch(showError);
+    });
+    modalBody.querySelectorAll('[data-approve]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (!confirm('批准后该阶段会进入“变更中”，可修改文档；冻结时生效。')) return;
+        api('/api/change/approve', { method: 'POST', body: { id: button.getAttribute('data-approve') } })
+          .then(function () { toast('变更单已批准'); closeModal(); boot(); }).catch(showError);
+      });
+    });
+    modalBody.querySelectorAll('[data-reject]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const reason = prompt('拒绝原因（可空）') || '';
+        api('/api/change/reject', { method: 'POST', body: { id: button.getAttribute('data-reject'), reason: reason } })
+          .then(function () { toast('已拒绝'); closeModal(); boot(); }).catch(showError);
+      });
+    });
+  }).catch(showError);
+}
+
+function openEvidence() {
+  api('/api/evidence').then(function (data) {
+    const items = data.items || [];
+    let html = '<p class="tag">目录：' + esc(data.folder || 'docs/evidence') + ' · ' + items.length + ' 个文件</p>';
+    if (!items.length) {
+      html += '<div class="empty">还没有证据。把截图/录屏放到项目的 docs/evidence/ 后刷新。</div>';
+    } else {
+      html += '<div class="gallery">' + items.map(function (item) {
+        const src = '/api/evidence/file?path=' + encodeURIComponent(item.path);
+        const preview = item.kind === 'image' ? '<img src="' + esc(src) + '" loading="lazy" alt="">' :
+          (item.kind === 'video' ? '<video src="' + esc(src) + '" controls preload="metadata"></video>' : '<div class="file-icon">FILE</div>');
+        return '<a class="gallery-item" href="' + esc(src) + '" target="_blank" rel="noreferrer">' + preview +
+          '<span>' + esc(item.name) + '</span><small>' + esc(item.mtime.replace('T', ' ')) + '</small></a>';
+      }).join('') + '</div>';
+    }
+    openModal('证据墙', html);
+  }).catch(showError);
+}
+
+/* ---------------- Outline / hierarchy ---------------- */
+
+function renderOutline(markdown) {
+  const box = document.getElementById('outline');
+  if (!box) return;
+  const editor = document.getElementById('editor');
+  const lines = String(markdown || '').replace(/\r\n/g, '\n').split('\n');
+  const rows = [];
+  lines.forEach(function (line, index) {
+    const heading = line.match(/^(#{2,3})\s+(.+)$/);
+    if (heading) rows.push({ kind: 'heading', level: heading[1].length, text: heading[2].trim(), line: index });
+    const check = line.match(/^\s*-\s+\[([ xX])\]\s+(.+)$/);
+    if (check) rows.push({ kind: 'check', checked: check[1].toLowerCase() === 'x', text: check[2].trim(), line: index });
+  });
+  if (!rows.length) { box.innerHTML = '<div class="empty">当前文档没有 H2/H3 或检查项</div>'; return; }
+  box.innerHTML = rows.map(function (row) {
+    if (row.kind === 'heading') {
+      return '<button class="outline-item level' + row.level + '" data-line="' + row.line + '">' + esc(row.text) + '</button>';
+    }
+    return '<button class="outline-check" data-check-line="' + row.line + '">' +
+      '<span class="check-mark">' + (row.checked ? '☑' : '☐') + '</span>' + esc(row.text) + '</button>';
+  }).join('');
+  box.querySelectorAll('[data-line]').forEach(function (button) {
+    button.addEventListener('click', function () { scrollToLine(parseInt(button.getAttribute('data-line'), 10)); });
+  });
+  box.querySelectorAll('[data-check-line]').forEach(function (button) {
+    button.addEventListener('click', function () { toggleCheckLine(parseInt(button.getAttribute('data-check-line'), 10)); });
+  });
+  const addButtons = box.parentElement.querySelectorAll('.outline-tools .btn');
+  addButtons.forEach(function (button) { button.disabled = !editor || editor.disabled; });
+}
+
+function scrollToLine(index) {
+  const editor = document.getElementById('editor');
+  if (!editor) return;
+  const lines = editor.value.split('\n');
+  let pos = 0;
+  for (let i = 0; i < index && i < lines.length; i++) pos += lines[i].length + 1;
+  editor.focus();
+  editor.setSelectionRange(pos, pos);
+  editor.scrollTop = Math.max(0, (index - 3) * 20);
+}
+
+function toggleCheckLine(index) {
+  const editor = document.getElementById('editor');
+  if (!editor || editor.disabled) return;
+  const lines = editor.value.split('\n');
+  if (index < 0 || index >= lines.length) return;
+  lines[index] = lines[index].replace(/^(\s*-\s+\[)([ xX])(\])/, function (all, left, mark, right) {
+    return left + (mark.toLowerCase() === 'x' ? ' ' : 'x') + right;
+  });
+  editor.value = lines.join('\n');
+  S.dirty = true;
+  const preview = document.getElementById('preview');
+  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  renderOutline(editor.value);
+}
+
+function addSection() {
+  const editor = document.getElementById('editor');
+  if (!editor || editor.disabled) return;
+  const title = prompt('新章节标题（会追加到文档末尾）');
+  if (!title || !title.trim()) return;
+  editor.value = editor.value.replace(/\s*$/, '') + '\n\n## ' + title.trim() + '\n\n';
+  S.dirty = true;
+  const preview = document.getElementById('preview');
+  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  renderOutline(editor.value);
+  toast('已追加章节，保存后写入版本');
+}
+
+function addCheckItem() {
+  const editor = document.getElementById('editor');
+  if (!editor || editor.disabled) return;
+  const text = prompt('检查项文字（会追加到文档末尾）');
+  if (!text || !text.trim()) return;
+  editor.value = editor.value.replace(/\s*$/, '') + '\n- [ ] ' + text.trim() + '\n';
+  S.dirty = true;
+  const preview = document.getElementById('preview');
+  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  renderOutline(editor.value);
+  toast('已追加检查项，保存后写入版本');
 }
 
 function confirmLeave() {
@@ -265,6 +465,7 @@ function renderStagePage() {
     '<div class="editor-tools"><button class="btn" id="btn-preview">预览</button><button class="btn primary" id="btn-save">保存</button></div></div>' +
     '<div class="editor-body" id="editor-body"><textarea id="editor" spellcheck="false" placeholder="选择左侧文档开始编辑…"></textarea><div class="preview" id="preview"></div></div></section>' +
     '<aside class="side-col">' +
+    '<div class="card side-card"><h3>章节</h3><div class="outline-tools"><button class="btn tiny" id="btn-add-section">+ 章节</button><button class="btn tiny" id="btn-add-check">+ 检查项</button></div><div id="outline" class="outline"><div class="empty">选择文档后显示层级</div></div></div>' +
     '<div class="card side-card"><h3>闸门</h3><div class="gate-box" id="gate-box">' + gateHtml(stage) + '</div>' +
     '<div class="btn-row" style="margin-top:10px"><button class="btn" id="btn-gate">运行闸门</button>' +
     '<button class="btn primary" id="btn-freeze"' + (stage.status === 'frozen' ? ' disabled' : '') + '>冻结</button>' +
@@ -285,6 +486,8 @@ function renderStagePage() {
   document.getElementById('btn-freeze').addEventListener('click', freezeStage);
   document.getElementById('btn-next').addEventListener('click', nextStage);
   document.getElementById('btn-preview').addEventListener('click', togglePreview);
+  document.getElementById('btn-add-section').addEventListener('click', addSection);
+  document.getElementById('btn-add-check').addEventListener('click', addCheckItem);
   const first = stage.docs.find(function (doc) { return doc.exists; }) || stage.docs[0];
   if (first) openArtifact(first.path);
 }
@@ -320,6 +523,7 @@ function openArtifact(path) {
     title.textContent = path.replace('docs/', '');
     sub.textContent = info.locked ? '已冻结 · 需变更单' : (info.exists ? '可编辑 · 保存会生成版本' : '尚未创建');
     preview.innerHTML = mdToHtml(editor.value);
+    renderOutline(editor.value);
     document.querySelectorAll('[data-path]').forEach(function (button) {
       button.classList.toggle('active', button.getAttribute('data-path') === path);
     });
@@ -327,6 +531,7 @@ function openArtifact(path) {
     editor.oninput = function () {
       S.dirty = true;
       preview.innerHTML = mdToHtml(editor.value);
+      renderOutline(editor.value);
       sub.textContent = '未保存修改';
     };
   }).catch(showError);
@@ -451,7 +656,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.4.0', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.5.0', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';
@@ -551,6 +756,7 @@ function boot() {
   api('/api/state').then(function (state) {
     S.state = state;
     if (state.needs_project) { renderWizard(); return; }
+    if (!S.updateChecked) { S.updateChecked = true; setTimeout(autoCheckUpdate, 1800); }
     S.stage = null;
     S.artifact = null;
     S.selected = null;

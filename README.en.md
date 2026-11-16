@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.5.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -30,6 +30,19 @@ The most dangerous failure for a solo developer plus an AI agent is not "cannot 
 |The agent reports "done" every week, but the build is not what you asked for|Delivery note (交付单) + evidence + weekly screenshot tour|
 |Scope keeps growing, so the game never ships|Cut list + capacity accounting + monthly retrospective|
 |Store page and ratings are considered only at the end|Store page starts 6 months early; G5 release checklist|
+
+## What's new in v0.5.0
+
+|Area|What changed|
+|---|---|
+|**Inno Setup installer**|build/installer.iss + build/build_installer.ps1: start menu, uninstall, optional desktop shortcut, per-user install|
+|**Code signing hook**|build/sign.ps1 + GitHub Secrets; skipped safely when no certificate|
+|**In-app auto update**|Check, download, SHA-256 verify, restart and replace|
+|**Change-order wizard**|Create/approve/reject after a stage is frozen; next freeze marks it applied|
+|**Section/checklist hierarchy**|H2/H3 outline, checkbox toggles, append section/check item|
+|**Evidence wall**|Browse docs/evidence/ images, videos and files|
+
+Guides: docs/桌面版.md, docs/安装包与签名.md.
 
 ## What's new in v0.4.0
 
@@ -134,7 +147,7 @@ Hand the project directory to your agent and say one sentence:
 |**Codex / Cursor / Gemini CLI**|Put `AGENTS.md` at the project root and tell the agent to route through `SKILL.md`|
 |**Any agent**|It only needs to read Markdown and run commands; the skill is the shell, `scripts/gamecheck.py` is the body|
 
-> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.4.0`).
+> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.5.0`).
 
 ## Command reference
 
@@ -194,6 +207,7 @@ Personal_Game_Studio_UE/
 │  ├─ 设计说明.md            # Why the workflow is designed this way
 │  ├─ 控制台使用指南.md      # Console: start, save/freeze/next, agent handoff
 │  ├─ 桌面版.md              # Desktop build, distribution and update
+│  ├─ 安装包与签名.md        # Installer and code signing
 │  └─ GitHub发布指南.md      # Release, iteration, installation, FAQ
 └─ .github/workflows/ci.yml  # Tests run on every push
 ```
@@ -208,7 +222,7 @@ Personal_Game_Studio_UE/
 
 ## Versioning
 
-- Versions follow [SemVer](https://semver.org/). The current version is `v0.4.0`; interfaces and file layout may still change.
+- Versions follow [SemVer](https://semver.org/). The current version is `v0.5.0`; interfaces and file layout may still change.
 - Change history lives in [CHANGELOG.md](CHANGELOG.md).
 - How the project is iterated, released and upgraded: see [docs/GitHub发布指南.md](docs/GitHub发布指南.md).
 - Console guide: [docs/控制台使用指南.md](docs/控制台使用指南.md).

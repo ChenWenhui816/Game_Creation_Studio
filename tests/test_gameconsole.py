@@ -177,5 +177,33 @@ class HttpTests(ConsoleBase):
             server.server_close()
 
 
+    def test_change_order_unlocks_and_applies(self):
+        self.project.save_artifact("docs/00_立项书.md", valid_brief(), None)
+        self.assertTrue(self.project.run_gate("P0")["status"] == "pass")
+        self.project.freeze("P0")
+        change = self.project.create_change("P0", "补充双输入", "新增手柄验收")
+        self.assertEqual(change["status"], "pending")
+        self.project.approve_change(change["id"])
+        self.assertEqual(self.project.state["stages"]["P0"]["status"], "change")
+        self.assertFalse(self.project.is_locked("docs/00_立项书.md"))
+        self.project.save_artifact("docs/00_立项书.md", valid_brief() + "\n\n## 双输入\n\n手柄已验收。\n", None)
+        self.project.freeze("P0")
+        applied = next(item for item in self.project.state["changes"] if item["id"] == change["id"])
+        self.assertEqual(applied["status"], "applied")
+        self.assertEqual(self.project.state["stages"]["P0"]["status"], "frozen")
+
+    def test_evidence_wall(self):
+        folder = self.root / "docs" / "evidence"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "shot.png").write_bytes(b"png-data")
+        data = self.project.evidence()
+        self.assertEqual(len(data["items"]), 1)
+        content, ctype = self.project.evidence_file("docs/evidence/shot.png")
+        self.assertEqual(content, b"png-data")
+        self.assertIn("image/png", ctype)
+        with self.assertRaises(gameconsole.ConsoleError):
+            self.project.evidence_file("docs/../gamecheck.json")
+
+
 if __name__ == "__main__":
     unittest.main()

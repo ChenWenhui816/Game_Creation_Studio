@@ -130,6 +130,9 @@ Any change to scope, numbers or style, or anything that costs more than one day 
 |`scripts/version.py`|Single version source + GitHub update check|
 |`build/desktop.spec`|PyInstaller build spec|
 |`docs/桌面版.md`|Desktop build, distribution and update|
+|`docs/安装包与签名.md`|Inno Setup installer and code signing|
+|`build/installer.iss`|Inno Setup definition|
+|`build/sign.ps1`|Optional code signing (skips without cert)|
 |`console_web/`|Console frontend (no build step)|
 |`docs/控制台使用指南.md`|Full console guide|
 |`scripts/ue_import_assets.py`|UE editor Python: batch import with material / collision / LOD setup|

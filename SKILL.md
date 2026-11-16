@@ -116,6 +116,9 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 | `scripts/console_app.py` | 桌面版入口（pywebview/WebView2） |
 | `build/desktop.spec` | PyInstaller 打包配置 |
 | `docs/桌面版.md` | 桌面版构建、分发与更新 |
+| `docs/安装包与签名.md` | Inno Setup 安装包与代码签名 |
+| `build/installer.iss` | Inno Setup 安装包配置 |
+| `build/sign.ps1` | 可选代码签名（无证书跳过） |
 | `console_web/` | 控制台前端（无构建） |
 | `docs/控制台使用指南.md` | 控制台完整使用说明 |
 | `scripts/ue_import_assets.py` | UE 资产导入（材质/碰撞/LOD） |

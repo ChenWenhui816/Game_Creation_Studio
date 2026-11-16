@@ -12,6 +12,9 @@ permissions:
 jobs:
   build-windows:
     runs-on: windows-latest
+    env:
+      SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
+      SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,22 +29,41 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements-desktop.txt
 
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Resolve version
+        shell: pwsh
+        run: |
+          $line = Get-Content scripts/version.py | Select-String 'VERSION =' | Select-Object -First 1
+          $version = $line.Line.Split('"')[1]
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
       - name: Build desktop app
         run: python -m PyInstaller --noconfirm --clean build/desktop.spec
+
+      - name: Build installer (and sign if cert secrets exist)
+        shell: pwsh
+        run: |
+          ./build/build_installer.ps1
 
       - name: Package zip
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/Personal_Game_Studio_UE -DestinationPath dist/Personal_Game_Studio_UE-${{ github.ref_name }}.zip -CompressionLevel Optimal
+          Compress-Archive -Path dist/Personal_Game_Studio_UE -DestinationPath "dist/Personal_Game_Studio_UE-$env:VERSION.zip" -CompressionLevel Optimal
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Personal_Game_Studio_UE-${{ github.ref_name }}
-          path: dist/Personal_Game_Studio_UE-${{ github.ref_name }}.zip
+          path: |
+            dist/Personal_Game_Studio_UE-${{ env.VERSION }}.zip
+            dist/Personal_Game_Studio_UE-${{ env.VERSION }}-setup.exe
 
       - name: Attach to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/Personal_Game_Studio_UE-${{ github.ref_name }}.zip
+          files: |
+            dist/Personal_Game_Studio_UE-${{ env.VERSION }}.zip
+            dist/Personal_Game_Studio_UE-${{ env.VERSION }}-setup.exe
