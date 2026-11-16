@@ -1,12 +1,13 @@
 ---
 name: ue5-solo-game
-description: Production controller for a UE5 single-character, single-player 3D level-based game. Use it for concept work, game design docs / art bible / tech plan, AI art and 3D asset pipelines, UE5 whitebox and systems implementation, level production, testing and packaging, Steam/Epic Demo release and version iteration. Routes by stage into the detailed references and runs gates with scripts/gamecheck.py.
+description: Production controller for a UE5 single-character, single-player 3D level-based game (bilingual entry, local visual console). Use it for concept work, game design docs / art bible / tech plan, AI art and 3D asset pipelines, UE5 whitebox and systems implementation, dual keyboard+gamepad input, level production, daily screenshot review, testing and packaging, Steam/Epic Demo release and version iteration. Routes by stage into the detailed references and runs gates with scripts/gamecheck.py.
 ---
 
 # UE5 Solo 3D Level-Based Game · Production Controller
 
 > This is the routing layer. **Determine the project's current stage first, then load only the matching references file.** Do not read every document at once.
 > All workflow commands: `python <skill>/scripts/gamecheck.py <subcommand> --root <project root>`.
+> Visual console: `python scripts/gameconsole.py serve` (see `docs/控制台使用指南.md`).
 
 ## Start here: do these three things first
 
@@ -43,6 +44,7 @@ If the user only says "I want to make a game" and there is no project yet, start
 |Batch-import assets / daily screenshot review|`references/04-引擎实现.md`|`ue_import_assets.py --dry-run` / `daily_gallery.py`|Manual clicking or judging drift by feel|
 |Polish, store page, Demo|`references/05-打磨与Demo上线.md`|`gate release`|Release/multilingual checklist not fully ticked, or dual input/store assets missing|
 |Scope out of control / repeated rework / need to cut|`references/06-风险与反模式.md`|—|Change orders piling up, weekly reports blocked repeatedly|
+|Want the visual console / create a project|`docs/控制台使用指南.md`|`gameconsole.py serve`|No `.gameconsole/state.json`|
 |First time on the project / explaining the workflow to someone|`references/00-总览与协作.md`|—|—|
 
 ## Standard loop for every task
@@ -61,6 +63,8 @@ If the user only says "I want to make a game" and there is no project yet, start
 
 |Command|Purpose|When|
 |---|---|---|
+|`gameconsole.py serve`|Open the local visual console|Day one / daily|
+|`gameconsole.py serve --project <path>`|Open an existing project|Existing project|
 |`gamecheck.py init --dir . --name "Project"`|Scaffold the project|Day one|
 |`gamecheck.py doc check --stage N`|Stage documents are complete|Before each stage|
 |`gamecheck.py gate spec`|G1 standards frozen|Before work starts, and every Monday|
@@ -119,6 +123,9 @@ Any change to scope, numbers or style, or anything that costs more than one day 
 |`references/en/00-overview.md`|English overview of the six stages, gates, pipelines and cost model|
 |`templates/`|14 templates you can fill in directly|
 |`scripts/gamecheck.py`|Gate validator (standard library, no dependencies)|
+|`scripts/gameconsole.py`|Local visual console: wizard, stages, save/freeze/next, agent inbox|
+|`console_web/`|Console frontend (no build step)|
+|`docs/控制台使用指南.md`|Full console guide|
 |`scripts/ue_import_assets.py`|UE editor Python: batch import with material / collision / LOD setup|
 |`scripts/daily_gallery.py`|Daily screenshot tour builder|
 |`docs/设计说明.md`|Why the workflow is designed this way|

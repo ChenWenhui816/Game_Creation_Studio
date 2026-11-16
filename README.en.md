@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -30,6 +30,18 @@ The most dangerous failure for a solo developer plus an AI agent is not "cannot 
 |The agent reports "done" every week, but the build is not what you asked for|Delivery note (交付单) + evidence + weekly screenshot tour|
 |Scope keeps growing, so the game never ships|Cut list + capacity accounting + monthly retrospective|
 |Store page and ratings are considered only at the end|Store page starts 6 months early; G5 release checklist|
+
+## What's new in v0.3.0
+
+|Area|What changed|
+|---|---|
+|**Local production console**|`python scripts/gameconsole.py serve` opens a local web console for P0–P5, gates, delivery notes and decisions|
+|**Project start wizard**|Name + one-sentence idea + folder path → creates the local project and enters the P0 panel|
+|**Stage folders & versions**|`stages/00_立项/` … `stages/05_上线/` keep per-stage README, version copies and freeze snapshots|
+|**Save / Freeze / Next**|Gates run before freezing; freeze snapshots and locks; next is blocked until frozen|
+|**Agent handoff inbox**|Agent submits with `gameconsole.py submit`; the web inbox accepts or returns|
+
+Full guide: `docs/控制台使用指南.md`.
 
 ## What's new in v0.2.0
 
@@ -74,6 +86,18 @@ About 28 weeks end to end (conservative; the capacity formula in `references/01-
 
 ## Five-minute start
 
+### Option A: visual console (recommended)
+
+```powershell
+git clone https://github.com/ChenWenhui816/ue5-solo-game-skill.git
+cd ue5-solo-game-skill
+python scripts/gameconsole.py serve
+```
+
+Open the printed local URL and follow the project wizard. It creates the project and enters the P0 panel.
+
+### Option B: command line
+
 ```bash
 # 1. Get the skill (clone or download a release)
 git clone https://github.com/ChenWenhui816/ue5-solo-game-skill.git
@@ -100,12 +124,14 @@ Hand the project directory to your agent and say one sentence:
 |**Codex / Cursor / Gemini CLI**|Put `AGENTS.md` at the project root and tell the agent to route through `SKILL.md`|
 |**Any agent**|It only needs to read Markdown and run commands; the skill is the shell, `scripts/gamecheck.py` is the body|
 
-> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.2.0`).
+> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.3.0`).
 
 ## Command reference
 
 |Command|What it does|When|
 |---|---|---|
+|`gameconsole.py serve`|Open the local visual console|Day one / daily|
+|`gameconsole.py serve --project <path>`|Open an existing project|Existing project|
 |`gamecheck.py init --dir . --name "Name"`|Scaffold the project|Day one|
 |`gamecheck.py doc check --stage N`|Stage documents are complete|Before entering each stage|
 |`gamecheck.py gate spec`|G1 standards frozen|Before work starts, and every Monday|
@@ -145,11 +171,14 @@ ue5-solo-game-skill/
 ├─ templates/                # 14 templates you can fill in directly
 ├─ scripts/
 │  ├─ gamecheck.py           # Gate validator (Python standard library, no dependencies)
+│  ├─ gameconsole.py         # Local visual console (HTTP + stage state machine)
 │  ├─ ue_import_assets.py    # UE editor Python: material / collision / LOD import
 │  └─ daily_gallery.py       # Daily screenshot tour builder
-├─ tests/                    # Unit tests for the validator
+├─ console_web/              # Console frontend (HTML/CSS/JS, no build step)
+├─ tests/                    # Unit tests for validator, console and scripts
 ├─ docs/
 │  ├─ 设计说明.md            # Why the workflow is designed this way
+│  ├─ 控制台使用指南.md      # Console: start, save/freeze/next, agent handoff
 │  └─ GitHub发布指南.md      # Release, iteration, installation, FAQ
 └─ .github/workflows/ci.yml  # Tests run on every push
 ```
@@ -164,9 +193,10 @@ ue5-solo-game-skill/
 
 ## Versioning
 
-- Versions follow [SemVer](https://semver.org/). The current version is `v0.2.0`; interfaces and file layout may still change.
+- Versions follow [SemVer](https://semver.org/). The current version is `v0.3.0`; interfaces and file layout may still change.
 - Change history lives in [CHANGELOG.md](CHANGELOG.md).
 - How the project is iterated, released and upgraded: see [docs/GitHub发布指南.md](docs/GitHub发布指南.md).
+- Console guide: [docs/控制台使用指南.md](docs/控制台使用指南.md).
 - When you add or change workflow, you must update in the same pull request: the `SKILL.md` routing, the matching `references/` file, `templates/`, the rules in `scripts/gamecheck.py`, the unit tests, and the CHANGELOG. The English entry files (`README.en.md`, `SKILL.en.md`, `references/en/00-overview.md`) must be kept in step with their Chinese counterparts.
 
 ## Scope and boundaries

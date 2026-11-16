@@ -3,6 +3,7 @@ name: ue5-solo-game
 description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入口）。用于立项、写游戏设计文档/美术圣经/技术方案、AI 美术与 3D 资产管线、UE5 白模与系统实现、键鼠+手柄双输入、关卡制作、每日截图巡览、测试打包、Steam/Epic Demo 上线与版本迭代。按阶段路由到 references 下的细分流程，并用 scripts/gamecheck.py 跑闸门。
 
 > English entry: [SKILL.en.md](SKILL.en.md) ｜ 中文入口：本文件
+> 可视化控制台：`python scripts/gameconsole.py serve`（说明见 `docs/控制台使用指南.md`）
 ---
 
 # UE5 单机 3D 闯关游戏 · 制作总控
@@ -45,6 +46,7 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 | 要批量导入资产 / 每日看截图 | `references/04-引擎实现.md` | `ue_import_assets.py --dry-run` / `daily_gallery.py` | 导入靠手点、跑偏靠感觉 |
 | 要做打磨、商店、Demo | `references/05-打磨与Demo上线.md` | `gate release` | 上线清单/13 清单未全勾，或缺双输入/商店素材 |
 | 范围失控 / 连续返工 / 不知道怎么砍 | `references/06-风险与反模式.md` | — | 变更单堆积、周报连续阻塞 |
+| 要用可视化控制台 / 新建工程 | `docs/控制台使用指南.md` | `gameconsole.py serve` | 没有 `.gameconsole/state.json` |
 | 第一次接手 / 要向人解释流程 | `references/00-总览与协作.md` | — | — |
 
 ## 每次任务的标准循环
@@ -63,6 +65,8 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 
 | 命令 | 用途 | 何时 |
 |---|---|---|
+| `gameconsole.py serve` | 启动本地可视化控制台 | 项目第一天 / 每天 |
+| `gameconsole.py serve --project <路径>` | 打开已有项目 | 已有工程 |
 | `gamecheck.py init --dir . --name "项目名"` | 生成项目骨架 | 项目第一天 |
 | `gamecheck.py doc check --stage N` | 阶段文档齐备 | 每阶段进入前 |
 | `gamecheck.py gate spec` | G1 标准冻结 | 开工前、每周一 |
@@ -107,6 +111,9 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 | `references/06-风险与反模式.md` | 20 个坑、砍功能协议、复盘 |
 | `templates/` | 14 份可直接填写的模板（含 13 多语言商店素材清单） |
 | `scripts/gamecheck.py` | 闸门校验器（标准库，无依赖） |
+| `scripts/gameconsole.py` | 本地可视化控制台（新建向导/阶段/保存/冻结/下一步） |
+| `console_web/` | 控制台前端（无构建） |
+| `docs/控制台使用指南.md` | 控制台完整使用说明 |
 | `scripts/ue_import_assets.py` | UE 资产导入（材质/碰撞/LOD） |
 | `scripts/daily_gallery.py` | 每日截图巡览生成器 |
 | `references/en/00-overview.md` | English overview（中文 references 仍是主源） |

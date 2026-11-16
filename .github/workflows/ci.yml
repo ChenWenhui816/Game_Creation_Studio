@@ -35,6 +35,7 @@ jobs:
           python scripts/gamecheck.py --show-rules
           python scripts/ue_import_assets.py --help
           python scripts/daily_gallery.py --help
+          python scripts/gameconsole.py --help
 
       - name: Init a sample project
         shell: bash

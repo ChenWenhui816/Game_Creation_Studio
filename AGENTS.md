@@ -6,12 +6,13 @@
 
 1. 读 `SKILL.md`，按阶段路由表加载 `references/` 下对应文件。
 2. 在游戏项目根执行 `scripts/gamecheck.py` 的闸门命令，读退出码。
-3. 遵守七条铁律：标准书唯一真相、用户三类决策、证据交付、偏离先记录、数值单一来源、闸门只修内容、每日 commit。
+3. 遵守八条铁律：标准书唯一真相、用户三类决策、证据交付、偏离先记录、数值单一来源、闸门只修内容、每日 commit、变更单与资产清单对账。
 4. 每个任务交 `docs/07_交付单/`；资产/系统验收用 `docs/08_验收单/`。
 
 ## B. 修改这套 skill
 
 1. 先读 `CONTRIBUTING.md` 与 `docs/维护规范.md`（维护期规范）。
+   控制台：`scripts/gameconsole.py` + `console_web/`；启动 `python scripts/gameconsole.py serve`。
 2. 改 `templates/` 的固定 H2 章节名时，必须同步改 `scripts/gamecheck.py` 的 `REQUIRED_SECTIONS`、`tests/` 与 `references/`，否则 CI 会红。
 3. 本地验证：
    ```bash

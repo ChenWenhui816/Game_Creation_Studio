@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.2.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -32,6 +32,21 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.3.0 新增：本地制作控制台
+
+| 能力 | 入口 | 解决什么 |
+|---|---|---|
+| 项目启动向导 | `python scripts/gameconsole.py serve` | 填一句想法 + 选工程目录，自动创建本地工程并进入 P0 |
+| 六阶段可视化 | 浏览器 `http://127.0.0.1:8765/` | P0–P5 状态、闸门红绿灯、当前阶段一眼看清 |
+| 环节工作台 | 文档树 + Markdown 编辑/预览 | 不改文件位置，网页直接改 `docs/` |
+| 保存 / 冻结 / 下一步 | 状态机按钮 | 冻结前跑闸门、生成快照、锁定文档；未冻结不能下一步 |
+| 每环节本地文件夹 | `stages/00_立项/` … `stages/05_上线/` | 版本副本、冻结快照、README 可直接在资源管理器打开 |
+| agent 交接 | `gameconsole.py submit` + 收件箱 | agent 交付单/证据/退回原因有地方放 |
+
+完整说明见 `docs/控制台使用指南.md`。
+
+![项目启动向导](docs/images/console-wizard.png)
 
 ## v0.2.0 新增了什么
 
@@ -76,6 +91,18 @@ flowchart LR
 
 ## 5 分钟上手
 
+### 方式 A：可视化控制台（推荐）
+
+```powershell
+git clone https://github.com/ChenWenhui816/ue5-solo-game-skill.git
+cd ue5-solo-game-skill
+python scripts/gameconsole.py serve
+```
+
+浏览器打开日志里的地址（默认 <http://127.0.0.1:8765/>），按“新建项目”向导填写想法、选工程目录，创建后自动进入 P0 面板。
+
+### 方式 B：命令行
+
 ```bash
 # 1. 拿到 skill（clone 或下载 release）
 git clone https://github.com/ChenWenhui816/ue5-solo-game-skill.git
@@ -102,13 +129,15 @@ python ue5-solo-game-skill/scripts/gamecheck.py doc check --stage 0 --root D:\ga
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
-> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.2.0`）。
+> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.3.0`）。
 
 ## 命令速查
 
 | 命令 | 作用 | 何时 |
 |---|---|---|
-| `gamecheck.py init --dir . --name "名"` | 生成项目骨架 | 第一天 |
+| `gameconsole.py serve` | 启动本地可视化控制台 | 第一天 / 每天 |
+| `gameconsole.py serve --project <路径>` | 打开已有项目 | 已有工程 |
+| `gamecheck.py init --dir . --name "名"` | 生成项目骨架（控制台会调用） | 第一天 |
 | `gamecheck.py doc check --stage N` | 阶段文档齐备 | 每阶段进入前 |
 | `gamecheck.py gate spec` | G1 标准冻结 | 开工前、每周一 |
 | `gamecheck.py gate whitebox` | G2 白模 | 白模结束 |
@@ -145,12 +174,15 @@ ue5-solo-game-skill/
 ├─ templates/                # 14 份可直接填写的模板（含 13 多语言商店素材清单）
 ├─ scripts/
 │  ├─ gamecheck.py           # 闸门校验器（标准库，无依赖）
+│  ├─ gameconsole.py         # 本地可视化控制台（HTTP + 状态机）
 │  ├─ ue_import_assets.py    # UE 资产导入（材质/碰撞/LOD）
 │  └─ daily_gallery.py       # 每日截图巡览生成器
+├─ console_web/              # 控制台前端（HTML/CSS/JS，无构建）
 ├─ tests/                    # 校验器与脚本单元测试
 ├─ docs/
 │  ├─ 设计说明.md            # 这套流程为什么这样设计
 │  ├─ 维护规范.md            # 章节约定/改动联动清单
+│  ├─ 控制台使用指南.md      # 控制台启动、保存/冻结/下一步、交接
 │  ├─ UE资产导入脚本.md      # 导入脚本使用说明
 │  ├─ 每日截图巡览.md        # 巡览生成器使用说明
 │  └─ GitHub发布指南.md      # 发布、迭代、安装、FAQ
@@ -167,7 +199,7 @@ ue5-solo-game-skill/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.2.0`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.3.0`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。
