@@ -1,0 +1,3 @@
+# 桌面版打包依赖（仅构建时需要；运行时不装 Python）
+pywebview>=5.0
+pyinstaller>=6.0

@@ -4,6 +4,7 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 
 > English entry: [SKILL.en.md](SKILL.en.md) ｜ 中文入口：本文件
 > 可视化控制台：`python scripts/gameconsole.py serve`（说明见 `docs/控制台使用指南.md`）
+> 桌面版：`python scripts/console_app.py`（构建见 `docs/桌面版.md`）
 ---
 
 # UE5 单机 3D 闯关游戏 · 制作总控
@@ -112,6 +113,9 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 | `templates/` | 14 份可直接填写的模板（含 13 多语言商店素材清单） |
 | `scripts/gamecheck.py` | 闸门校验器（标准库，无依赖） |
 | `scripts/gameconsole.py` | 本地可视化控制台（新建向导/阶段/保存/冻结/下一步） |
+| `scripts/console_app.py` | 桌面版入口（pywebview/WebView2） |
+| `build/desktop.spec` | PyInstaller 打包配置 |
+| `docs/桌面版.md` | 桌面版构建、分发与更新 |
 | `console_web/` | 控制台前端（无构建） |
 | `docs/控制台使用指南.md` | 控制台完整使用说明 |
 | `scripts/ue_import_assets.py` | UE 资产导入（材质/碰撞/LOD） |

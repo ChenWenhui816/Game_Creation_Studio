@@ -38,6 +38,7 @@ jobs:
           python scripts/ue_import_assets.py --help
           python scripts/daily_gallery.py --help
           python scripts/gameconsole.py --help
+          python scripts/console_app.py --version
 
       - name: Init a sample project
         shell: bash

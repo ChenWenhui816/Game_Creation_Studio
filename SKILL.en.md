@@ -8,6 +8,7 @@ description: Production controller for a UE5 single-character, single-player 3D 
 > This is the routing layer. **Determine the project's current stage first, then load only the matching references file.** Do not read every document at once.
 > All workflow commands: `python <skill>/scripts/gamecheck.py <subcommand> --root <project root>`.
 > Visual console: `python scripts/gameconsole.py serve` (see `docs/控制台使用指南.md`).
+> Desktop app: `python scripts/console_app.py` (build in `docs/桌面版.md`).
 
 ## Start here: do these three things first
 
@@ -45,6 +46,7 @@ If the user only says "I want to make a game" and there is no project yet, start
 |Polish, store page, Demo|`references/05-打磨与Demo上线.md`|`gate release`|Release/multilingual checklist not fully ticked, or dual input/store assets missing|
 |Scope out of control / repeated rework / need to cut|`references/06-风险与反模式.md`|—|Change orders piling up, weekly reports blocked repeatedly|
 |Want the visual console / create a project|`docs/控制台使用指南.md`|`gameconsole.py serve`|No `.gameconsole/state.json`|
+|Want the Windows desktop app|`docs/桌面版.md`|`console_app.py` / PyInstaller|No desktop build yet|
 |First time on the project / explaining the workflow to someone|`references/00-总览与协作.md`|—|—|
 
 ## Standard loop for every task
@@ -124,6 +126,10 @@ Any change to scope, numbers or style, or anything that costs more than one day 
 |`templates/`|14 templates you can fill in directly|
 |`scripts/gamecheck.py`|Gate validator (standard library, no dependencies)|
 |`scripts/gameconsole.py`|Local visual console: wizard, stages, save/freeze/next, agent inbox|
+|`scripts/console_app.py`|Windows desktop entry (pywebview / WebView2)|
+|`scripts/version.py`|Single version source + GitHub update check|
+|`build/desktop.spec`|PyInstaller build spec|
+|`docs/桌面版.md`|Desktop build, distribution and update|
 |`console_web/`|Console frontend (no build step)|
 |`docs/控制台使用指南.md`|Full console guide|
 |`scripts/ue_import_assets.py`|UE editor Python: batch import with material / collision / LOD setup|

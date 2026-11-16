@@ -4,9 +4,9 @@
 
 **把"做游戏"拆成 6 个阶段、6 道可执行闸门，让 AI agent 按标准干活，你只做三类决策。**
 
-[![CI](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/ue5-solo-game-skill/actions/workflows/ci.yml)
+[![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.4.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -32,6 +32,14 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.4.0 新增：桌面版
+
+- `scripts/console_app.py`：pywebview/WebView2 桌面窗口；关闭窗口停止本地服务。
+- PyInstaller 打包：`build/desktop.spec` + `build/build_desktop.ps1`，输出 `dist/Personal_Game_Studio_UE/`。
+- 版本统一在 `scripts/version.py`；UI「检查更新」查 GitHub Releases，只提示不自动覆盖。
+- 桌面首次运行把 skill 释放到 `%LOCALAPPDATA%\Personal_Game_Studio_UE\skill\<版本>`。
+- 构建与更新说明：`docs/桌面版.md`。
 
 ## v0.3.0 新增：本地制作控制台
 
@@ -94,8 +102,8 @@ flowchart LR
 ### 方式 A：可视化控制台（推荐）
 
 ```powershell
-git clone https://github.com/ChenWenhui816/ue5-solo-game-skill.git
-cd ue5-solo-game-skill
+git clone https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git
+cd Personal_Game_Studio_UE
 python scripts/gameconsole.py serve
 ```
 
@@ -105,18 +113,18 @@ python scripts/gameconsole.py serve
 
 ```bash
 # 1. 拿到 skill（clone 或下载 release）
-git clone https://github.com/ChenWenhui816/ue5-solo-game-skill.git
+git clone https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git
 
 # 2. 生成一个新游戏项目骨架
-python ue5-solo-game-skill/scripts/gamecheck.py init --dir D:\games\my-game --name "我的游戏"
+python Personal_Game_Studio_UE/scripts/gamecheck.py init --dir D:\games\my-game --name "我的游戏"
 
 # 3. 填立项书（8 节，一页纸），然后过 G0
-python ue5-solo-game-skill/scripts/gamecheck.py doc check --stage 0 --root D:\games\my-game
+python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D:\games\my-game
 ```
 
 把项目目录交给 agent，并说一句：
 
-> 读 `ue5-solo-game-skill/SKILL.md`，按阶段推进我的项目；每次任务交交付单并附证据。
+> 读 `Personal_Game_Studio_UE/SKILL.md`，按阶段推进我的项目；每次任务交交付单并附证据。
 
 `init` 会把 14 份模板、`scripts/gamecheck.py` 与 `store/` 目录一起复制进项目。之后在项目根直接用 `python scripts/gamecheck.py <子命令> --root .` 即可，不依赖 skill 的安装路径。
 
@@ -124,12 +132,12 @@ python ue5-solo-game-skill/scripts/gamecheck.py doc check --stage 0 --root D:\ga
 
 | 环境 | 做法 |
 |---|---|
-| **DSH** | 把整个 `ue5-solo-game-skill/` 放进你的 profile 技能目录；游戏项目根使用 `init` 生成的 `AGENTS.md`（已指向 skill），不要用仓库根的维护规则 |
+| **DSH** | 把整个 `Personal_Game_Studio_UE/` 放进你的 profile 技能目录；游戏项目根使用 `init` 生成的 `AGENTS.md`（已指向 skill），不要用仓库根的维护规则 |
 | **Claude Code** | 复制到 `~/.claude/skills/ue5-solo-game/`（全局）或 `<项目>/.claude/skills/ue5-solo-game/` |
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
-> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.3.0`）。
+> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.4.0`）。
 
 ## 命令速查
 
@@ -156,7 +164,7 @@ python ue5-solo-game-skill/scripts/gamecheck.py doc check --stage 0 --root D:\ga
 ## 目录结构
 
 ```
-ue5-solo-game-skill/
+Personal_Game_Studio_UE/
 ├─ SKILL.md                  # 技能入口：阶段路由 + 铁律 + 命令
 ├─ README.md                 # 你正在读的文件
 ├─ AGENTS.md                 # 给 Codex/DSH 等自动读取的仓库规则
@@ -175,14 +183,20 @@ ue5-solo-game-skill/
 ├─ scripts/
 │  ├─ gamecheck.py           # 闸门校验器（标准库，无依赖）
 │  ├─ gameconsole.py         # 本地可视化控制台（HTTP + 状态机）
+│  ├─ console_app.py         # 桌面版入口（pywebview/WebView2）
+│  ├─ version.py             # 单一版本源 + 更新检查
 │  ├─ ue_import_assets.py    # UE 资产导入（材质/碰撞/LOD）
 │  └─ daily_gallery.py       # 每日截图巡览生成器
 ├─ console_web/              # 控制台前端（HTML/CSS/JS，无构建）
+├─ build/desktop.spec        # PyInstaller 打包配置
+├─ build/build_desktop.ps1   # Windows 一键构建
+├─ requirements-desktop.txt  # 桌面版构建依赖
 ├─ tests/                    # 校验器与脚本单元测试
 ├─ docs/
 │  ├─ 设计说明.md            # 这套流程为什么这样设计
 │  ├─ 维护规范.md            # 章节约定/改动联动清单
 │  ├─ 控制台使用指南.md      # 控制台启动、保存/冻结/下一步、交接
+│  ├─ 桌面版.md              # 桌面版构建、分发与更新
 │  ├─ UE资产导入脚本.md      # 导入脚本使用说明
 │  ├─ 每日截图巡览.md        # 巡览生成器使用说明
 │  └─ GitHub发布指南.md      # 发布、迭代、安装、FAQ
@@ -199,7 +213,7 @@ ue5-solo-game-skill/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.3.0`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.4.0`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

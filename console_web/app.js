@@ -192,6 +192,8 @@ function renderTopbar() {
     '<div class="top-actions">' +
     (currentStage ? pill('当前 ' + current + ' · ' + (STATUS_LABEL[currentStage.status] || ''), '') : '') +
     '<button class="btn" id="btn-inbox">收件箱' + (state && state.pending_submissions ? ' ' + state.pending_submissions : '') + '</button>' +
+    '<button class="btn" id="btn-new">新建项目</button>' +
+    '<button class="btn" id="btn-update">检查更新</button>' +
     '<button class="btn" id="btn-refresh">刷新</button>' +
     '</div></header>';
 }
@@ -218,8 +220,24 @@ function renderShell() {
   });
   const inbox = document.getElementById('btn-inbox');
   if (inbox) inbox.addEventListener('click', function () { location.hash = '#/inbox'; });
+  const createNew = document.getElementById('btn-new');
+  if (createNew) createNew.addEventListener('click', function () { location.hash = '#/new'; });
   const refresh = document.getElementById('btn-refresh');
   if (refresh) refresh.addEventListener('click', function () { boot(); });
+  const update = document.getElementById('btn-update');
+  if (update) update.addEventListener('click', checkUpdate);
+}
+
+function checkUpdate() {
+  toast('正在检查 GitHub 版本…');
+  api('/api/update').then(function (info) {
+    if (!info.ok) { toast('检查失败：' + (info.error || '网络不可用'), true); return; }
+    const state = info.update_available ? '发现新版本' : '已是最新';
+    openModal('版本检查 · ' + state,
+      '<div class="kv"><span>当前</span><b>' + esc(info.current) + '</b><span>最新</span><b>' + esc(info.latest || '—') + '</b></div>' +
+      '<p style="margin-top:12px">下载地址：<a href="' + esc(info.url) + '" target="_blank" rel="noreferrer">' + esc(info.url) + '</a></p>' +
+      '<p class="tag">更新只提示，不自动覆盖项目文件。</p>');
+  }).catch(showError);
 }
 
 function confirmLeave() {
@@ -433,10 +451,15 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.3.0', '') + '</div></header>' +
+  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.4.0', '') +
+    (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';
   renderWizardBody();
+  const back = document.getElementById('w-back-project');
+  if (back) back.addEventListener('click', function () {
+    if (S.state && S.state.project) { location.hash = '#/stage/' + S.state.current_stage; boot(); }
+  });
 }
 
 function renderWizardBody() {

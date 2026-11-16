@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
+### Added
+
+- Windows 桌面版入口 `scripts/console_app.py`：本地服务 + pywebview/WebView2 窗口，关闭窗口即停止服务。
+- PyInstaller 构建配置 `build/desktop.spec`、`build/build_desktop.ps1`、`requirements-desktop.txt`。
+- GitHub Actions `build-desktop`：打 tag 自动构建 Windows zip artifact。
+- `scripts/version.py` 单一版本源 + GitHub Releases 更新检查（UI「检查更新」）。
+- 桌面版首次运行把 skill 释放到 `%LOCALAPPDATA%`；项目仍创建在用户选择的目录。
+- `docs/桌面版.md`：构建、分发、版本更新与边界说明。
+
+### Changed
+
+- 控制台创建项目与运行闸门改为进程内调用 gamecheck，消除打包后 `sys.executable` 依赖。
+- 资源路径支持 PyInstaller `_MEIPASS`，控制台可在打包环境运行。
+
 ## [0.3.0] - 2026-11-16
 
 ### Added

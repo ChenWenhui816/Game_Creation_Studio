@@ -1,5 +1,5 @@
 # ============================================================
-# ue5-solo-game-skill 仓库忽略规则
+# Personal_Game_Studio_UE 仓库忽略规则
 # 原则：只提交 skill 本体（文档、模板、脚本、测试）；
 #       一切运行产物、本地工程、编辑器缓存都不入库。
 # ============================================================
@@ -67,6 +67,13 @@ DerivedDataCache/
 
 # ---------- 说明 ----------
 # templates/ 下的 *.csv 是模板正文，必须提交，不要在此忽略。
-# 本仓库没有构建产物；build/ 与 Build/ 仅在你误把 UE 工程放进仓库时兜底。
-build/
-Build/
+# 桌面版构建产物（spec/脚本本身要提交）
+/build/desktop/
+/dist/
+/appdata/
+/.appdata/
+
+# UE 工程产物兜底（不忽略 Build/，因为 build/ 是本仓库的 PyInstaller 配置目录）
+Binaries/
+Intermediate/
+Saved/

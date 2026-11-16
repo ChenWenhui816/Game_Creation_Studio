@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.3.0）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.4.0）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的六阶段、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -31,7 +31,10 @@ r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.3.0）。
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
+import importlib.util
+import io
 import json
 import mimetypes
 import os
@@ -48,11 +51,51 @@ from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-CONSOLE_VERSION = "0.3.0"
+try:
+    import version as _version
+except ImportError:  # pragma: no cover - 单文件运行时
+    _version = None
+
+CONSOLE_VERSION = _version.VERSION if _version else "0.4.0"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
 WEB_ROOT = SKILL_ROOT / "console_web"
+_GAMECHECK_MODULE = None
+
+
+def configure(skill_root=None, web_root=None) -> None:
+    """桌面版打包后把资源根目录切到 _MEIPASS 或导出的 skill 目录。"""
+    global SKILL_ROOT, TEMPLATES, GAMECHECK, WEB_ROOT, _GAMECHECK_MODULE
+    if skill_root:
+        SKILL_ROOT = Path(skill_root).resolve()
+        TEMPLATES = SKILL_ROOT / "templates"
+        GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
+        WEB_ROOT = SKILL_ROOT / "console_web"
+        _GAMECHECK_MODULE = None
+    if web_root:
+        WEB_ROOT = Path(web_root).resolve()
+
+
+def run_gamecheck(argv) -> tuple:
+    """进程内调用 gamecheck.main；打包后不能再依赖 sys.executable。"""
+    global _GAMECHECK_MODULE
+    if _GAMECHECK_MODULE is None:
+        if not Path(GAMECHECK).is_file():
+            raise ConsoleError("找不到 gamecheck.py：%s" % GAMECHECK, 500)
+        spec = importlib.util.spec_from_file_location("gamecheck_runtime", GAMECHECK)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        _GAMECHECK_MODULE = module
+    out, err = io.StringIO(), io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = _GAMECHECK_MODULE.main([str(item) for item in argv])
+    except SystemExit as exc:
+        code = int(exc.code or 0)
+    except Exception as exc:  # noqa: BLE001
+        return 2, out.getvalue(), err.getvalue() + str(exc)
+    return int(code), out.getvalue(), err.getvalue()
 CONSOLE_DIR = ".gameconsole"
 STAGE_ROOT = "stages"
 MAX_BODY = 8 * 1024 * 1024
@@ -191,6 +234,10 @@ class Project:
             raise ConsoleError("不是控制台项目：缺少 .gameconsole/state.json", 404)
         self._state_mtime = self.state_path.stat().st_mtime_ns if self.state_path.exists() else None
         self.ensure_layout()
+        if self.state.get("console_version") != CONSOLE_VERSION:
+            self.state["console_version"] = CONSOLE_VERSION
+            self.state["skill_version"] = CONSOLE_VERSION
+            self.save_state()
 
     def reload(self) -> None:
         """外部进程（agent CLI）可能更新 state.json；请求前刷新。"""
@@ -211,15 +258,14 @@ class Project:
         if path.exists() and any(path.iterdir()) and not force:
             raise ConsoleError("目标目录非空：%s" % path, 409,
                                {"hint": "换一个空目录，或勾选“允许覆盖”"})
-        cmd = [sys.executable, str(GAMECHECK), "init", "--dir", str(path),
-               "--name", name, "--engine", engine, "--scale", scale]
+        cmd = ["init", "--dir", str(path), "--name", name,
+               "--engine", engine, "--scale", scale, "--templates", str(TEMPLATES)]
         if force:
             cmd.append("--force")
-        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                              errors="replace", timeout=120)
-        if proc.returncode != 0:
+        code, stdout, stderr = run_gamecheck(cmd)
+        if code != 0:
             raise ConsoleError("创建项目骨架失败", 500,
-                               {"stdout": proc.stdout[-3000:], "stderr": proc.stderr[-3000:]})
+                               {"stdout": stdout[-3000:], "stderr": stderr[-3000:]})
         cls._write_brief(path, name, idea, platform)
         project = cls._init_console(path, name, platform, scale, engine)
         project.audit("project.create", str(path), {"name": name, "idea": idea})
@@ -514,35 +560,33 @@ class Project:
 
     def run_gate(self, stage_id: str) -> dict:
         item = self.stage_def(stage_id)
-        cmd = [sys.executable, str(GAMECHECK)] + list(item["gate"]) + [
-            "--root", str(self.root), "--json"]
+        args = list(item["gate"]) + ["--root", str(self.root), "--json"]
         started = time.time()
-        proc = subprocess.run(cmd, cwd=str(self.root), capture_output=True, text=True,
-                              encoding="utf-8", errors="replace", timeout=180)
+        code, stdout, stderr = run_gamecheck(args)
         report = None
         try:
-            report = json.loads(proc.stdout)
+            report = json.loads(stdout)
         except ValueError:
-            start = proc.stdout.find("{")
+            start = stdout.find("{")
             if start >= 0:
                 try:
-                    report = json.loads(proc.stdout[start:])
+                    report = json.loads(stdout[start:])
                 except ValueError:
                     report = None
-        status = "pass" if proc.returncode == 0 else "fail"
+        status = "pass" if code == 0 else "fail"
         gate = {
             "status": status,
-            "exit_code": proc.returncode,
+            "exit_code": code,
             "ran_at": now_iso(),
             "duration_ms": int((time.time() - started) * 1000),
-            "command": " ".join(cmd[1:]),
+            "command": "gamecheck.py " + " ".join(args),
             "report": report,
-            "stdout_tail": proc.stdout[-6000:],
-            "stderr_tail": proc.stderr[-3000:],
+            "stdout_tail": stdout[-6000:],
+            "stderr_tail": stderr[-3000:],
         }
         self.state["stages"][stage_id]["gate"] = gate
         self.state["stages"][stage_id]["updated_at"] = now_iso()
-        self.audit("gate.run", stage_id, {"status": status, "exit_code": proc.returncode})
+        self.audit("gate.run", stage_id, {"status": status, "exit_code": code})
         self.save_state()
         self.write_stage_readme(stage_id)
         return gate
@@ -819,6 +863,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._static(path[len("/static/"):])
             elif path == "/api/health":
                 self._ok({"console": CONSOLE_VERSION, "project": bool(getattr(self.server, "project", None))})
+            elif path == "/api/update":
+                info = _version.check_latest() if _version else {"ok": False, "error": "version 模块缺失"}
+                self._ok(info)
             elif path == "/api/state":
                 project = getattr(self.server, "project", None)
                 if project is None:
