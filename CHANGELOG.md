@@ -17,6 +17,10 @@
 - agent 交接收件箱：`gameconsole.py submit` 提交交付单，网页通过/退回并记录原因。
 - 控制台单元/HTTP 测试与使用指南 `docs/控制台使用指南.md`。
 
+### Fixed
+
+- Windows 下 `gameconsole.py --help` 中文输出使用 UTF-8，避免 CLI/CI 编码失败。
+
 ### Changed
 
 - `README.md`、`README.en.md`、`SKILL.md`、`SKILL.en.md` 增加控制台入口与 v0.3.0 能力表。

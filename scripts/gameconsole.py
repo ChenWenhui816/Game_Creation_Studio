@@ -123,6 +123,15 @@ DOC_STAGE = {
 STATUSES = ("drafting", "review", "frozen", "blocked")
 
 
+def _setup_stdout() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except (OSError, ValueError):
+                pass
+
+
 def now_iso() -> str:
     return datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -1080,6 +1089,7 @@ def build_parser():
 
 
 def main(argv=None):
+    _setup_stdout()
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
