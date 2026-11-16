@@ -205,5 +205,40 @@ class HttpTests(ConsoleBase):
             self.project.evidence_file("docs/../gamecheck.json")
 
 
+class V06Tests(ConsoleBase):
+    def test_time_tracking(self):
+        first = self.project.time_start("P0", "测试")
+        self.assertEqual(first["active"]["stage"], "P0")
+        stopped = self.project.time_stop("完成")
+        self.assertIsNone(stopped["active"])
+        self.assertGreaterEqual(len(stopped["entries"]), 1)
+        self.assertIn("P0", stopped["per_stage"])
+
+    def test_stage_diff_and_insight(self):
+        self.project.save_artifact("docs/00_立项书.md", valid_brief() + "\n\n## 玩法变化\n\n新增双输入与关卡。\n", None)
+        diff = self.project.stage_diff("P0")
+        self.assertGreaterEqual(diff["changed"], 1)
+        insight = self.project.stage_insight("P0")
+        self.assertTrue(any(item["stage"] == "P2" for item in insight["suggestions"]), insight)
+
+    def test_change_diff(self):
+        self.project.save_artifact("docs/00_立项书.md", valid_brief(), None)
+        self.project.freeze("P0")
+        change = self.project.create_change("P0", "玩法调整", "新增关卡", ["docs/00_立项书.md"])
+        self.project.approve_change(change["id"])
+        self.project.save_artifact("docs/00_立项书.md", valid_brief() + "\n\n## 新章节\n\n内容。\n", None)
+        diff = self.project.diff_change(change["id"])
+        self.assertGreaterEqual(diff["changed"], 1)
+        self.assertIn("+## 新章节", diff["docs"][0]["diff"])
+
+    def test_evidence_upload(self):
+        result = self.project.save_evidence("test.txt", "aGVsbG8=", "P0")
+        self.assertEqual(result["name"], "test.txt")
+        items = self.project.evidence()["items"]
+        self.assertTrue(any(item["name"] == "test.txt" for item in items))
+        data, _ = self.project.evidence_file("docs/evidence/test.txt")
+        self.assertEqual(data, b"hello")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.5.0）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.6.0）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的六阶段、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -31,7 +31,9 @@ r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.5.0）。
 from __future__ import annotations
 
 import argparse
+import base64
 import contextlib
+import difflib
 import hashlib
 import importlib.util
 import io
@@ -56,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.5.0"
+CONSOLE_VERSION = _version.VERSION if _version else "0.6.0"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -98,7 +100,7 @@ def run_gamecheck(argv) -> tuple:
     return int(code), out.getvalue(), err.getvalue()
 CONSOLE_DIR = ".gameconsole"
 STAGE_ROOT = "stages"
-MAX_BODY = 8 * 1024 * 1024
+MAX_BODY = 12 * 1024 * 1024
 
 STAGES = [
     {
@@ -234,6 +236,8 @@ class Project:
             raise ConsoleError("不是控制台项目：缺少 .gameconsole/state.json", 404)
         self._state_mtime = self.state_path.stat().st_mtime_ns if self.state_path.exists() else None
         self.ensure_layout()
+        self.state.setdefault("time", {"entries": [], "active": None})
+        self.state.setdefault("changes", [])
         if self.state.get("console_version") != CONSOLE_VERSION:
             self.state["console_version"] = CONSOLE_VERSION
             self.state["skill_version"] = CONSOLE_VERSION
@@ -315,6 +319,7 @@ class Project:
                              "updated_at": now_iso()} for sid in STAGE_IDS},
             "submissions": [],
             "changes": [],
+            "time": {"entries": [], "active": None},
         }
         write_json(console / "state.json", state)
         project = cls(path)
@@ -458,6 +463,7 @@ class Project:
             raise ConsoleError("变更单不是待审批状态", 409)
         stage = item["stage"]
         item["previous_status"] = self.stage_status(stage)
+        self._snapshot_change(item)
         item["status"] = "approved"
         item["approved_at"] = now_iso()
         self.set_stage_status(stage, "change")
@@ -615,6 +621,172 @@ class Project:
             raise ConsoleError("证据文件不存在", 404)
         ctype = mimetypes.guess_type(str(path))[0] or "application/octet-stream"
         return path.read_bytes(), ctype
+
+
+    def time_start(self, stage_id: str, note: str = "") -> dict:
+        self.stage_def(stage_id)
+        active = self.state["time"].get("active")
+        if active:
+            self.time_stop("切换阶段")
+        self.state["time"]["active"] = {"stage": stage_id, "start": now_iso(), "note": note}
+        self.audit("time.start", stage_id, {"note": note})
+        self.save_state()
+        return self.time_summary()
+
+    def time_stop(self, note: str = "") -> dict:
+        active = self.state["time"].get("active")
+        if not active:
+            raise ConsoleError("当前没有运行中的计时", 409)
+        start = datetime.fromisoformat(active["start"])
+        end = datetime.now()
+        seconds = max(0, int((end - start).total_seconds()))
+        entry = {"stage": active.get("stage", ""), "start": active["start"],
+                 "end": end.strftime("%Y-%m-%dT%H:%M:%S"), "seconds": seconds,
+                 "note": note or active.get("note", "")}
+        self.state["time"].setdefault("entries", []).append(entry)
+        self.state["time"]["active"] = None
+        self.audit("time.stop", entry["stage"], {"seconds": seconds})
+        self.save_state()
+        return self.time_summary()
+
+    def time_summary(self) -> dict:
+        entries = self.state["time"].get("entries", [])
+        per_stage = {sid: 0 for sid in STAGE_IDS}
+        per_day = {}
+        for entry in entries:
+            per_stage[entry.get("stage", "")] = per_stage.get(entry.get("stage", ""), 0) + int(entry.get("seconds", 0))
+            day = (entry.get("start") or "")[:10]
+            per_day[day] = per_day.get(day, 0) + int(entry.get("seconds", 0))
+        active = self.state["time"].get("active")
+        elapsed = 0
+        if active:
+            try:
+                elapsed = max(0, int((datetime.now() - datetime.fromisoformat(active["start"])).total_seconds()))
+            except ValueError:
+                elapsed = 0
+        return {"entries": entries, "per_stage": per_stage, "per_day": per_day,
+                "total": sum(per_stage.values()), "active": active, "active_elapsed": elapsed}
+
+    def _stage_baseline(self, stage_id: str, rel: str):
+        folder = self.stage_dir(stage_id) / "frozen"
+        snapshots = sorted((path.parent for path in folder.glob("*/freeze.json")), reverse=True)
+        for snapshot in snapshots:
+            candidate = snapshot / rel
+            if candidate.is_file():
+                return read_text(candidate), rel_posix(snapshot, self.root)
+        for version in sorted(self.versions(rel), key=lambda item: item.get("at", "")):
+            candidate = self.root / version.get("path", "")
+            if candidate.is_file():
+                return read_text(candidate), version.get("path", "")
+        return None, None
+
+    def stage_diff(self, stage_id: str) -> dict:
+        self.stage_def(stage_id)
+        docs = []
+        for path in self.docs_for_stage(stage_id):
+            rel = rel_posix(path, self.root)
+            current = read_text(path)
+            baseline, source = self._stage_baseline(stage_id, rel)
+            if baseline is None:
+                baseline = ""
+                source = "no-baseline"
+            if baseline == current:
+                continue
+            diff = list(difflib.unified_diff(baseline.splitlines(), current.splitlines(),
+                                             fromfile=source or "baseline", tofile=rel, lineterm="", n=2))
+            added = sum(1 for line in diff if line.startswith("+") and not line.startswith("+++"))
+            removed = sum(1 for line in diff if line.startswith("-") and not line.startswith("---"))
+            docs.append({"path": rel, "added": added, "removed": removed,
+                         "baseline": source, "diff": "\n".join(diff)})
+        return {"stage": stage_id, "docs": docs, "changed": len(docs),
+                "added": sum(d["added"] for d in docs), "removed": sum(d["removed"] for d in docs)}
+
+    def stage_insight(self, stage_id: str) -> dict:
+        diff = self.stage_diff(stage_id)
+        text = " ".join(doc["path"] + "\n" + doc["diff"] for doc in diff["docs"])
+        index = STAGE_IDS.index(stage_id)
+        rules = [
+            (r"玩法|核心循环|关卡|剧情|GDD", "P2", ["docs/04_关卡设计"], "玩法/关卡变化需要白模与关卡设计同步"),
+            (r"美术|色板|风格|UI|模型|贴图|动画", "P3", ["docs/02_美术圣经", "docs/05_资产清单.csv"], "美术或资产变化需要更新资产清单与风格锚点"),
+            (r"技术|架构|性能|输入|手柄|键鼠", "P2", ["docs/03_技术方案"], "技术/输入变化需要同步技术方案与验收"),
+            (r"数值|跳跃|攻击|血量|速度|伤害", "P2", ["docs/06_数值表.csv"], "数值变化需要跑 numbers check 并更新测试记录"),
+            (r"商店|Demo|发布|本地化|预告片", "P5", ["docs/12_Demo上线清单.md", "docs/13_多语言商店素材清单.md"], "上线相关内容需要更新发布清单"),
+            (r"资产|清单|fbx|贴图|材质", "P3", ["docs/05_资产清单.csv"], "资产变化需要更新清单并跑 manifest check"),
+        ]
+        suggestions = []
+        for pattern, target, docs, reason in rules:
+            if target in STAGE_BY_ID and STAGE_IDS.index(target) > index and re.search(pattern, text):
+                suggestions.append({"stage": target, "docs": docs, "reason": reason,
+                                    "priority": "high" if re.search(r"玩法|技术|数值|资产", pattern) else "normal"})
+        # 去重
+        seen = set()
+        unique = []
+        for item in suggestions:
+            key = (item["stage"], tuple(item["docs"]))
+            if key not in seen:
+                seen.add(key)
+                unique.append(item)
+        return {"stage": stage_id, "changed": diff["changed"], "suggestions": unique,
+                "summary": ("检测到 %d 个文档修改；建议检查 %d 个下游环节。" % (diff["changed"], len(unique)))
+                           if diff["changed"] else "当前阶段没有相对基线的修改。"}
+
+    def _snapshot_change(self, item: dict) -> None:
+        stage = item["stage"]
+        docs = item.get("docs") or [rel_posix(path, self.root) for path in self.docs_for_stage(stage)]
+        base = self.console / "changes" / item["id"] / "before"
+        base.mkdir(parents=True, exist_ok=True)
+        saved = []
+        for rel in docs:
+            path = self.root / rel
+            if path.is_file():
+                dest = base / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(path, dest)
+                saved.append(rel)
+        item["baseline_docs"] = saved
+
+    def diff_change(self, change_id: str) -> dict:
+        item = next((c for c in self.changes() if c.get("id") == change_id), None)
+        if not item:
+            raise ConsoleError("找不到变更单：%s" % change_id, 404)
+        base = self.console / "changes" / change_id / "before"
+        docs = []
+        for rel in item.get("baseline_docs", []):
+            old_path = base / rel
+            new_path = self.root / rel
+            old = read_text(old_path) if old_path.is_file() else ""
+            new = read_text(new_path) if new_path.is_file() else ""
+            diff = list(difflib.unified_diff(old.splitlines(), new.splitlines(),
+                                             fromfile="before/" + rel, tofile=rel, lineterm="", n=2))
+            docs.append({"path": rel, "diff": "\n".join(diff),
+                         "added": sum(1 for x in diff if x.startswith("+") and not x.startswith("+++")),
+                         "removed": sum(1 for x in diff if x.startswith("-") and not x.startswith("---"))})
+        return {"id": change_id, "title": item.get("title"), "status": item.get("status"),
+                "docs": docs, "changed": len([d for d in docs if d["diff"]])}
+
+    def save_evidence(self, name: str, data_b64: str, stage: str = "") -> dict:
+        try:
+            raw = base64.b64decode(data_b64, validate=True)
+        except Exception:
+            raise ConsoleError("证据内容不是合法 base64", 400)
+        if len(raw) > 6 * 1024 * 1024:
+            raise ConsoleError("单个证据不能超过 6 MB", 413)
+        safe = re.sub(r"[^0-9A-Za-z._\-\u4e00-\u9fff]+", "_", Path(name).name).strip("._") or "evidence"
+        if len(safe) > 80:
+            safe = safe[-80:]
+        folder = self.root / "docs" / "evidence"
+        folder.mkdir(parents=True, exist_ok=True)
+        target = folder / safe
+        stem, suffix = target.stem, target.suffix
+        counter = 2
+        while target.exists():
+            target = folder / ("%s-%d%s" % (stem, counter, suffix))
+            counter += 1
+        target.write_bytes(raw)
+        rel = rel_posix(target, self.root)
+        self.audit("evidence.upload", rel, {"size": len(raw), "stage": stage})
+        self.save_state()
+        return {"path": rel, "name": target.name, "size": len(raw), "stage": stage}
 
     def artifact_info(self, rel: str) -> dict:
         path = self._check_rel(rel)
@@ -988,6 +1160,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._ok({"items": self._project().changes()})
             elif path == "/api/evidence":
                 self._ok(self._project().evidence())
+            elif path == "/api/stage/diff":
+                self._ok(self._project().stage_diff(query.get("id", ["P0"])[0]))
+            elif path == "/api/stage/insight":
+                self._ok(self._project().stage_insight(query.get("id", ["P0"])[0]))
+            elif path == "/api/change/diff":
+                self._ok(self._project().diff_change(query.get("id", [""])[0]))
+            elif path == "/api/time":
+                self._ok(self._project().time_summary())
             elif path == "/api/evidence/file":
                 data, ctype = self._project().evidence_file(query.get("path", [""])[0])
                 self._send(200, data, ctype)
@@ -1071,6 +1251,13 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/change/reject":
                 project = self._project()
                 self._ok(project.reject_change(payload.get("id", ""), payload.get("reason", "")))
+            elif path == "/api/time/start":
+                self._ok(self._project().time_start(payload.get("stage", ""), payload.get("note", "")))
+            elif path == "/api/time/stop":
+                self._ok(self._project().time_stop(payload.get("note", "")))
+            elif path == "/api/evidence/upload":
+                self._ok(self._project().save_evidence(
+                    payload.get("name", "evidence"), payload.get("data", ""), payload.get("stage", "")))
             elif path == "/api/update/download":
                 callback = getattr(self.server, "update_download", None)
                 if not callable(callback):

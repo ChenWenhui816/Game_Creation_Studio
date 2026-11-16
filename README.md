@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.5.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.6.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -32,6 +32,18 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.6.0 新增：diff、证据上传、拖拽、总览与计时
+
+| 能力 | 说明 |
+|---|---|
+| 变更单 diff | 批准时保存基线，查看修改前后统一 diff |
+| 证据上传 | 拖拽/选择文件上传到 docs/evidence/ |
+| 章节拖拽 | H2 章节拖动重排，保存后生成版本 |
+| 修改高亮 | 阶段内相对基线高亮变更文档、增删行 |
+| 影响推理 | 按关键词提示下游 P2/P3/P5 检查项 |
+| 制作总览 | 完成环、闸门/文档统计、阶段时间柱状图 |
+| 制作计时 | 开始/停止计时，按阶段累计 |
 
 ## v0.5.0 新增：安装包、自动更新与控制台增强
 
@@ -150,7 +162,7 @@ python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
-> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.5.0`）。
+> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.6.0`）。
 
 ## 命令速查
 
@@ -210,7 +222,7 @@ Personal_Game_Studio_UE/
 ├─ docs/
 │  ├─ 设计说明.md            # 这套流程为什么这样设计
 │  ├─ 维护规范.md            # 章节约定/改动联动清单
-│  ├─ 控制台使用指南.md      # 控制台启动、保存/冻结/下一步、交接
+│  ├─ 控制台使用指南.md      # 控制台启动、保存/冻结/下一步、diff/计时、交接
 │  ├─ 桌面版.md              # 桌面版构建、分发与更新
 │  ├─ 安装包与签名.md        # Inno Setup 与代码签名
 │  ├─ UE资产导入脚本.md      # 导入脚本使用说明
@@ -229,7 +241,7 @@ Personal_Game_Studio_UE/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.5.0`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.6.0`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

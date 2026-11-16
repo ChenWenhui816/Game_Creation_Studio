@@ -15,6 +15,8 @@ const S = {
   preview: true,
   wizard: null,
   updateChecked: false,
+  time: null,
+  clockTimer: null,
 };
 
 const STATUS_LABEL = { drafting: '草稿', review: '待验收', frozen: '已冻结', blocked: '阻塞', change: '变更中' };
@@ -72,6 +74,14 @@ function openModal(title, bodyHtml) {
 function closeModal() { modal.hidden = true; }
 document.getElementById('modal-close').addEventListener('click', closeModal);
 modal.addEventListener('click', function (event) { if (event.target === modal) closeModal(); });
+
+function formatDuration(seconds) {
+  const total = Math.max(0, Math.floor(seconds || 0));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return (h ? h + 'h ' : '') + String(m).padStart(2, '0') + 'm ' + String(s).padStart(2, '0') + 's';
+}
 
 function pill(text, kind) {
   return '<span class="pill ' + (kind || '') + '">' + esc(text) + '</span>';
@@ -193,6 +203,9 @@ function renderTopbar() {
     '</div></div>' +
     '<div class="top-actions">' +
     (currentStage ? pill('当前 ' + current + ' · ' + (STATUS_LABEL[currentStage.status] || ''), '') : '') +
+    '<button class="btn" id="btn-dashboard">总览</button>' +
+    '<span class="timer"><span id="time-clock">' + formatDuration(S.time ? (S.time.active ? S.time.active_elapsed + (S.time.total || 0) : S.time.total) : 0) + '</span>' +
+    '<button class="btn tiny" id="btn-timer">' + (S.time && S.time.active ? '停止计时' : '开始计时') + '</button></span>' +
     '<button class="btn" id="btn-inbox">收件箱' + (state && state.pending_submissions ? ' ' + state.pending_submissions : '') + '</button>' +
     '<button class="btn" id="btn-changes">变更单' + (state && state.pending_changes ? ' ' + state.pending_changes : '') + '</button>' +
     '<button class="btn" id="btn-evidence">证据墙</button>' +
@@ -234,6 +247,10 @@ function renderShell() {
   if (refresh) refresh.addEventListener('click', function () { boot(); });
   const update = document.getElementById('btn-update');
   if (update) update.addEventListener('click', checkUpdate);
+  const dashboard = document.getElementById('btn-dashboard');
+  if (dashboard) dashboard.addEventListener('click', function () { location.hash = '#/dashboard'; });
+  const timer = document.getElementById('btn-timer');
+  if (timer) timer.addEventListener('click', toggleTimer);
 }
 
 function checkUpdate() {
@@ -300,8 +317,10 @@ function openChanges() {
       return '<li class="change-item"><div><b>' + esc(item.id) + '</b> · ' + esc(item.stage) + ' · ' + esc(item.title) +
         '<div class="tag">' + esc(changeStatusLabel(item.status)) + ' · ' + esc(item.at) + '</div>' +
         (item.reason ? '<p>' + esc(item.reason) + '</p>' : '') + '</div>' +
-        (item.status === 'pending' ? '<div class="btn-row"><button class="btn tiny" data-approve="' + esc(item.id) + '">批准</button>' +
-          '<button class="btn tiny" data-reject="' + esc(item.id) + '">拒绝</button></div>' : '') + '</li>';
+        '<div class="btn-row">' +
+        ((item.baseline_docs && item.baseline_docs.length) ? '<button class="btn tiny" data-diff="' + esc(item.id) + '">查看 diff</button>' : '') +
+        (item.status === 'pending' ? '<button class="btn tiny" data-approve="' + esc(item.id) + '">批准</button>' +
+          '<button class="btn tiny" data-reject="' + esc(item.id) + '">拒绝</button>' : '') + '</div></li>';
     }).join('') : '<li class="empty">暂无变更单</li>';
     openModal('变更单',
       '<div class="change-form"><label>阶段</label><select id="change-stage">' + options + '</select>' +
@@ -327,6 +346,9 @@ function openChanges() {
           .then(function () { toast('变更单已批准'); closeModal(); boot(); }).catch(showError);
       });
     });
+    modalBody.querySelectorAll('[data-diff]').forEach(function (button) {
+      button.addEventListener('click', function () { openChangeDiff(button.getAttribute('data-diff')); });
+    });
     modalBody.querySelectorAll('[data-reject]').forEach(function (button) {
       button.addEventListener('click', function () {
         const reason = prompt('拒绝原因（可空）') || '';
@@ -340,9 +362,11 @@ function openChanges() {
 function openEvidence() {
   api('/api/evidence').then(function (data) {
     const items = data.items || [];
-    let html = '<p class="tag">目录：' + esc(data.folder || 'docs/evidence') + ' · ' + items.length + ' 个文件</p>';
+    let html = '<p class="tag">目录：' + esc(data.folder || 'docs/evidence') + ' · ' + items.length + ' 个文件</p>' +
+      '<div class="evidence-upload" id="evidence-drop"><b>拖拽截图/录屏到这里</b><span>或点击选择文件（单文件 ≤ 6 MB）</span>' +
+      '<input type="file" id="evidence-file" multiple accept="image/*,video/*,.txt,.log,.json"></div>';
     if (!items.length) {
-      html += '<div class="empty">还没有证据。把截图/录屏放到项目的 docs/evidence/ 后刷新。</div>';
+      html += '<div class="empty">还没有证据。上传截图、录屏或日志，方便验收。</div>';
     } else {
       html += '<div class="gallery">' + items.map(function (item) {
         const src = '/api/evidence/file?path=' + encodeURIComponent(item.path);
@@ -353,6 +377,68 @@ function openEvidence() {
       }).join('') + '</div>';
     }
     openModal('证据墙', html);
+    const input = document.getElementById('evidence-file');
+    const drop = document.getElementById('evidence-drop');
+    if (input) input.addEventListener('change', function () { uploadEvidence(input.files); });
+    if (drop) {
+      drop.addEventListener('dragover', function (event) { event.preventDefault(); drop.classList.add('over'); });
+      drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+      drop.addEventListener('drop', function (event) {
+        event.preventDefault();
+        drop.classList.remove('over');
+        if (event.dataTransfer && event.dataTransfer.files) uploadEvidence(event.dataTransfer.files);
+      });
+    }
+  }).catch(showError);
+}
+
+function uploadEvidence(files) {
+  const list = Array.from(files || []).filter(function (file) { return file.size <= 6 * 1024 * 1024; });
+  if (!list.length) { toast('没有可上传文件（或文件超过 6 MB）', true); return; }
+  toast('正在上传 ' + list.length + ' 个文件…');
+  let chain = Promise.resolve(0);
+  list.forEach(function (file) {
+    chain = chain.then(function (done) {
+      return new Promise(function (resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function () {
+          const data = String(reader.result || '').split(',')[1] || '';
+          api('/api/evidence/upload', { method: 'POST', body: {
+            name: file.name, data: data, stage: S.state ? S.state.current_stage : ''
+          }}).then(function () { resolve(done + 1); }).catch(reject);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    });
+  });
+  chain.then(function (count) {
+    toast('已上传 ' + count + ' 个证据');
+    openEvidence();
+  }).catch(showError);
+}
+
+
+function openChangeDiff(changeId) {
+  api('/api/change/diff?id=' + encodeURIComponent(changeId)).then(function (data) {
+    const docs = data.docs || [];
+    let html = '<div class="kv"><span>变更单</span><b>' + esc(data.id) + '</b><span>状态</span><b>' + esc(changeStatusLabel(data.status)) + '</b></div>';
+    if (!docs.length) {
+      html += '<div class="empty">还没有可对比的基线（批准变更后才会保存）。</div>';
+    } else {
+      html += docs.map(function (doc) {
+        const lines = String(doc.diff || '').split('\n').map(function (line) {
+          let cls = '';
+          if (line.startsWith('+++') || line.startsWith('---') || line.startsWith('@@')) cls = 'hunk';
+          else if (line.startsWith('+')) cls = 'add';
+          else if (line.startsWith('-')) cls = 'del';
+          return '<span class="' + cls + '">' + esc(line || ' ') + '</span>';
+        }).join('\n');
+        return '<h4 style="margin-top:14px">' + esc(doc.path) + ' <small>+' + doc.added + ' / -' + doc.removed + '</small></h4>' +
+          '<pre class="diff-view">' + (lines || '无差异') + '</pre>';
+      }).join('');
+    }
+    openModal('变更单 diff', html);
   }).catch(showError);
 }
 
@@ -363,29 +449,69 @@ function renderOutline(markdown) {
   if (!box) return;
   const editor = document.getElementById('editor');
   const lines = String(markdown || '').replace(/\r\n/g, '\n').split('\n');
+  const h2 = [];
+  lines.forEach(function (line, index) { if (/^##\s+/.test(line)) h2.push(index); });
   const rows = [];
+  let section = -1;
   lines.forEach(function (line, index) {
+    if (/^##\s+/.test(line)) section += 1;
     const heading = line.match(/^(#{2,3})\s+(.+)$/);
-    if (heading) rows.push({ kind: 'heading', level: heading[1].length, text: heading[2].trim(), line: index });
+    if (heading) rows.push({ kind: 'heading', level: heading[1].length, text: heading[2].trim(), line: index, section: heading[1].length === 2 ? section : -1 });
     const check = line.match(/^\s*-\s+\[([ xX])\]\s+(.+)$/);
     if (check) rows.push({ kind: 'check', checked: check[1].toLowerCase() === 'x', text: check[2].trim(), line: index });
   });
   if (!rows.length) { box.innerHTML = '<div class="empty">当前文档没有 H2/H3 或检查项</div>'; return; }
   box.innerHTML = rows.map(function (row) {
     if (row.kind === 'heading') {
-      return '<button class="outline-item level' + row.level + '" data-line="' + row.line + '">' + esc(row.text) + '</button>';
+      const drag = row.section >= 0 ? ' draggable="true" data-section="' + row.section + '"' : '';
+      return '<button class="outline-item level' + row.level + '" data-line="' + row.line + '"' + drag + '>' +
+        (row.section >= 0 ? '<span class="drag-handle">⋮⋮</span>' : '') + esc(row.text) + '</button>';
     }
     return '<button class="outline-check" data-check-line="' + row.line + '">' +
       '<span class="check-mark">' + (row.checked ? '☑' : '☐') + '</span>' + esc(row.text) + '</button>';
   }).join('');
   box.querySelectorAll('[data-line]').forEach(function (button) {
     button.addEventListener('click', function () { scrollToLine(parseInt(button.getAttribute('data-line'), 10)); });
+    if (button.getAttribute('draggable') === 'true') {
+      button.addEventListener('dragstart', function (event) {
+        event.dataTransfer.setData('text/plain', button.getAttribute('data-section'));
+        event.dataTransfer.effectAllowed = 'move';
+        button.classList.add('dragging');
+      });
+      button.addEventListener('dragend', function () { button.classList.remove('dragging'); });
+      button.addEventListener('dragover', function (event) { event.preventDefault(); });
+      button.addEventListener('drop', function (event) {
+        event.preventDefault();
+        const from = parseInt(event.dataTransfer.getData('text/plain'), 10);
+        const to = parseInt(button.getAttribute('data-section'), 10);
+        if (!isNaN(from) && !isNaN(to) && from !== to) reorderSection(from, to);
+      });
+    }
   });
   box.querySelectorAll('[data-check-line]').forEach(function (button) {
     button.addEventListener('click', function () { toggleCheckLine(parseInt(button.getAttribute('data-check-line'), 10)); });
   });
   const addButtons = box.parentElement.querySelectorAll('.outline-tools .btn');
   addButtons.forEach(function (button) { button.disabled = !editor || editor.disabled; });
+}
+
+function reorderSection(from, to) {
+  const editor = document.getElementById('editor');
+  if (!editor || editor.disabled) return;
+  const lines = editor.value.replace(/\r\n/g, '\n').split('\n');
+  const starts = [];
+  lines.forEach(function (line, index) { if (/^##\s+/.test(line)) starts.push(index); });
+  if (from < 0 || to < 0 || from >= starts.length || to >= starts.length) return;
+  const sections = starts.map(function (start, index) { return lines.slice(start, index + 1 < starts.length ? starts[index + 1] : lines.length); });
+  const prefix = lines.slice(0, starts[0]);
+  const moved = sections.splice(from, 1)[0];
+  sections.splice(to, 0, moved);
+  editor.value = prefix.concat.apply(prefix, sections).join('\n');
+  S.dirty = true;
+  const preview = document.getElementById('preview');
+  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  renderOutline(editor.value);
+  toast('章节顺序已调整，保存后写入版本');
 }
 
 function scrollToLine(index) {
@@ -440,6 +566,77 @@ function addCheckItem() {
   toast('已追加检查项，保存后写入版本');
 }
 
+
+function updateTimerUI() {
+  const clock = document.getElementById('time-clock');
+  const button = document.getElementById('btn-timer');
+  if (!clock) return;
+  const active = S.time && S.time.active;
+  let elapsed = 0;
+  if (active && active.start) {
+    const started = new Date(active.start).getTime();
+    if (!isNaN(started)) elapsed = Math.max(0, Math.floor((Date.now() - started) / 1000));
+  }
+  const seconds = (S.time ? (S.time.total || 0) : 0) + elapsed;
+  clock.textContent = formatDuration(seconds);
+  if (button) button.textContent = active ? '停止计时' : '开始计时';
+}
+
+function toggleTimer() {
+  if (!S.state || !S.state.project) return;
+  const active = S.time && S.time.active;
+  const body = active ? {} : { stage: S.state.current_stage, note: '制作计时' };
+  api(active ? '/api/time/stop' : '/api/time/start', { method: 'POST', body: body }).then(function (time) {
+    S.time = time;
+    updateTimerUI();
+    toast(active ? '计时已停止' : '开始计时 · ' + S.state.current_stage);
+    if (location.hash === '#/dashboard') renderDashboard();
+  }).catch(showError);
+}
+
+function renderDashboard() {
+  api('/api/time').then(function (time) {
+    S.time = time;
+    const state = S.state;
+    renderShell();
+    const main = document.getElementById('main');
+    const stages = state.stages || [];
+    const frozen = stages.filter(function (s) { return s.status === 'frozen'; }).length;
+    const passed = stages.filter(function (s) { return s.gate_status === 'pass'; }).length;
+    const totalDocs = stages.reduce(function (n, s) { return n + (s.docs || []).filter(function (d) { return d.exists; }).length; }, 0);
+    const totalSeconds = time.total || 0;
+    const ring = Math.round((frozen / stages.length) * 100);
+    const circumference = 2 * Math.PI * 52;
+    const dash = circumference * (frozen / stages.length);
+    const stageBars = stages.map(function (stage) {
+      const seconds = (time.per_stage || {})[stage.id] || 0;
+      const width = totalSeconds ? Math.max(2, Math.round((seconds / totalSeconds) * 100)) : 0;
+      return '<div class="bar-row"><span>' + esc(stage.id + ' ' + stage.name) + '</span>' +
+        '<div class="bar-track"><i style="width:' + width + '%"></i></div><b>' + formatDuration(seconds) + '</b></div>';
+    }).join('');
+    const recent = (time.entries || []).slice(-6).reverse().map(function (entry) {
+      return '<tr><td>' + esc(entry.stage) + '</td><td>' + esc((entry.start || '').replace('T', ' ')) + '</td><td>' + formatDuration(entry.seconds) + '</td><td>' + esc(entry.note || '') + '</td></tr>';
+    }).join('');
+    main.innerHTML =
+      '<div class="page-head"><div><h2>制作总览</h2><p>阶段、闸门、文档与制作时间的单一视图。</p></div><div class="btn-row"><button class="btn" id="dash-stage">返回阶段</button></div></div>' +
+      '<div class="dash-grid">' +
+      '<section class="card dash-hero"><div class="ring-wrap"><svg viewBox="0 0 120 120"><circle class="ring-bg" cx="60" cy="60" r="52"></circle>' +
+      '<circle class="ring-fg" cx="60" cy="60" r="52" stroke-dasharray="' + dash + ' ' + circumference + '"></circle>' +
+      '<text x="60" y="58" text-anchor="middle" class="ring-num">' + ring + '%</text><text x="60" y="76" text-anchor="middle" class="ring-sub">阶段完成</text></svg></div>' +
+      '<div class="dash-stats"><div><b>' + frozen + '</b><span>已冻结阶段</span></div><div><b>' + passed + '</b><span>闸门通过</span></div><div><b>' + totalDocs + '</b><span>已有文档</span></div><div><b>' + formatDuration(totalSeconds) + '</b><span>累计制作</span></div></div></section>' +
+      '<section class="card"><h3>制作时间 · 按阶段</h3><div class="bars">' + (stageBars || '<div class="empty">还没有计时记录</div>') + '</div><p class="tag">用右上角「开始计时 / 停止计时」记录真实投入。</p></section>' +
+      '<section class="card"><h3>阶段状态</h3><div class="stage-table">' + stages.map(function (s) {
+        return '<div class="stage-row"><span class="dot ' + s.status + '"></span><b>' + s.id + '</b><span>' + esc(s.name) + '</span>' +
+          '<em>' + esc(STATUS_LABEL[s.status] || s.status) + '</em><small>' + esc(GATE_LABEL[s.gate_status] || '未运行') + '</small></div>';
+      }).join('') + '</div></section>' +
+      '<section class="card"><h3>最近计时</h3><table class="data-table"><thead><tr><th>阶段</th><th>开始</th><th>时长</th><th>备注</th></tr></thead><tbody>' +
+      (recent || '<tr><td colspan="4" class="empty">暂无记录</td></tr>') + '</tbody></table></section>' +
+      '</div>';
+    const back = document.getElementById('dash-stage');
+    if (back) back.addEventListener('click', function () { location.hash = '#/stage/' + state.current_stage; });
+  }).catch(showError);
+}
+
 function confirmLeave() {
   if (!S.dirty) return true;
   return window.confirm('当前文档有未保存修改，确定离开吗？');
@@ -466,6 +663,8 @@ function renderStagePage() {
     '<div class="editor-body" id="editor-body"><textarea id="editor" spellcheck="false" placeholder="选择左侧文档开始编辑…"></textarea><div class="preview" id="preview"></div></div></section>' +
     '<aside class="side-col">' +
     '<div class="card side-card"><h3>章节</h3><div class="outline-tools"><button class="btn tiny" id="btn-add-section">+ 章节</button><button class="btn tiny" id="btn-add-check">+ 检查项</button></div><div id="outline" class="outline"><div class="empty">选择文档后显示层级</div></div></div>' +
+    '<div class="card side-card"><h3>修改高亮</h3><div id="diff-box"><div class="empty">对比最近冻结/初始版本…</div></div></div>' +
+    '<div class="card side-card"><h3>影响推理</h3><div id="insight-box"><div class="empty">检测修改后给出下游检查建议</div></div></div>' +
     '<div class="card side-card"><h3>闸门</h3><div class="gate-box" id="gate-box">' + gateHtml(stage) + '</div>' +
     '<div class="btn-row" style="margin-top:10px"><button class="btn" id="btn-gate">运行闸门</button>' +
     '<button class="btn primary" id="btn-freeze"' + (stage.status === 'frozen' ? ' disabled' : '') + '>冻结</button>' +
@@ -488,6 +687,7 @@ function renderStagePage() {
   document.getElementById('btn-preview').addEventListener('click', togglePreview);
   document.getElementById('btn-add-section').addEventListener('click', addSection);
   document.getElementById('btn-add-check').addEventListener('click', addCheckItem);
+  loadStageInsight(stage.stage.id);
   const first = stage.docs.find(function (doc) { return doc.exists; }) || stage.docs[0];
   if (first) openArtifact(first.path);
 }
@@ -504,6 +704,79 @@ function gateHtml(stage) {
     }).join('') + '</ul>';
   }
   return html;
+}
+
+
+function loadStageInsight(stageId) {
+  Promise.all([
+    api('/api/stage/diff?id=' + encodeURIComponent(stageId)).catch(function () { return null; }),
+    api('/api/stage/insight?id=' + encodeURIComponent(stageId)).catch(function () { return null; })
+  ]).then(function (result) {
+    renderDiffBox(result[0]);
+    renderInsightBox(result[1]);
+  });
+}
+
+function renderDiffBox(diff) {
+  const box = document.getElementById('diff-box');
+  if (!box) return;
+  if (!diff || !diff.docs || !diff.docs.length) {
+    box.innerHTML = '<div class="empty">相对最近冻结/初始版本，暂无修改</div>';
+    document.querySelectorAll('[data-path]').forEach(function (button) { button.classList.remove('changed'); });
+    return;
+  }
+  const changed = {};
+  diff.docs.forEach(function (doc) { changed[doc.path] = true; });
+  document.querySelectorAll('[data-path]').forEach(function (button) {
+    const path = button.getAttribute('data-path');
+    button.classList.toggle('changed', !!changed[path]);
+  });
+  box.innerHTML = '<div class="line"><span>修改文档</span><b>' + diff.changed + '</b></div>' +
+    '<div class="line"><span>新增行</span><b class="add">+' + diff.added + '</b></div>' +
+    '<div class="line"><span>删除行</span><b class="del">-' + diff.removed + '</b></div>' +
+    '<ul class="diff-list">' + diff.docs.map(function (doc) {
+      return '<li><button data-diff-path="' + esc(doc.path) + '">' + esc(doc.path.replace('docs/', '')) +
+        '<span><i class="add">+' + doc.added + '</i><i class="del">-' + doc.removed + '</i></span></button></li>';
+    }).join('') + '</ul>';
+  box.querySelectorAll('[data-diff-path]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      const path = button.getAttribute('data-diff-path');
+      const doc = diff.docs.find(function (item) { return item.path === path; });
+      if (doc) openDiff(doc);
+    });
+  });
+}
+
+function openDiff(doc) {
+  const lines = String(doc.diff || '').split('\n').map(function (line) {
+    let cls = '';
+    if (line.startsWith('+++') || line.startsWith('---')) cls = 'hunk';
+    else if (line.startsWith('@@')) cls = 'hunk';
+    else if (line.startsWith('+')) cls = 'add';
+    else if (line.startsWith('-')) cls = 'del';
+    return '<span class="' + cls + '">' + esc(line || ' ') + '</span>';
+  }).join('\n');
+  openModal('修改高亮 · ' + doc.path, '<pre class="diff-view">' + lines + '</pre>');
+}
+
+function renderInsightBox(insight) {
+  const box = document.getElementById('insight-box');
+  if (!box) return;
+  if (!insight || !insight.suggestions || !insight.suggestions.length) {
+    box.innerHTML = '<div class="empty">' + esc((insight && insight.summary) || '暂无下游影响') + '</div>';
+    return;
+  }
+  box.innerHTML = '<p class="tag">' + esc(insight.summary) + '</p>' +
+    insight.suggestions.map(function (item) {
+      return '<button class="insight-item" data-target-stage="' + esc(item.stage) + '">' +
+        '<strong>' + esc(item.stage) + ' · ' + esc(item.reason) + '</strong>' +
+        '<span>' + esc((item.docs || []).join(' · ')) + '</span></button>';
+    }).join('');
+  box.querySelectorAll('[data-target-stage]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      location.hash = '#/stage/' + button.getAttribute('data-target-stage');
+    });
+  });
 }
 
 function openArtifact(path) {
@@ -656,7 +929,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.5.0', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.6.0', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';
@@ -753,7 +1026,9 @@ function createProject() {
 /* ---------------- Router / boot ---------------- */
 
 function boot() {
-  api('/api/state').then(function (state) {
+  Promise.all([api('/api/state'), api('/api/time').catch(function () { return null; })]).then(function (result) {
+    const state = result[0];
+    S.time = result[1];
     S.state = state;
     if (state.needs_project) { renderWizard(); return; }
     if (!S.updateChecked) { S.updateChecked = true; setTimeout(autoCheckUpdate, 1800); }
@@ -770,6 +1045,7 @@ function route() {
   const hash = location.hash || '#/stage/' + S.state.current_stage;
   if (hash === '#/inbox') { if (!confirmLeave()) return; renderInbox(); return; }
   if (hash === '#/new') { if (!confirmLeave()) return; renderWizard(); return; }
+  if (hash === '#/dashboard') { if (!confirmLeave()) return; renderShell(); renderDashboard(); return; }
   const match = hash.match(/^#\/stage\/(P[0-5])/);
   const stageId = match ? match[1] : S.state.current_stage;
   if (!confirmLeave()) { location.hash = '#/stage/' + (S.stage ? S.stage.stage.id : stageId); return; }
@@ -784,6 +1060,7 @@ function route() {
 
 window.addEventListener('hashchange', route);
 document.addEventListener('keydown', handleShortcut);
+setInterval(updateTimerUI, 1000);
 window.addEventListener('beforeunload', function (event) {
   if (S.dirty) { event.preventDefault(); event.returnValue = ''; }
 });
