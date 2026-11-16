@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.6.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -30,6 +30,18 @@ The most dangerous failure for a solo developer plus an AI agent is not "cannot 
 |The agent reports "done" every week, but the build is not what you asked for|Delivery note (交付单) + evidence + weekly screenshot tour|
 |Scope keeps growing, so the game never ships|Cut list + capacity accounting + monthly retrospective|
 |Store page and ratings are considered only at the end|Store page starts 6 months early; G5 release checklist|
+
+## What's new in v0.7.0
+
+|Area|What changed|
+|---|---|
+|**8 pipelines**|Concept, standards, script, whitebox/tech, art/video, music/audio, content, release|
+|**Script + audio**|New templates, gates and handoff IDs (SC/SH/LINE/MUS/SFX/VO)|
+|**Art + video**|Storyboard, animatic, previz and PV sub-lane; UE MRQ vs AI video|
+|**Studio CLI**|pipelines / explain / doctor / next|
+|**MCP Gateway**|Local tool bus POC with permissions, audit, tools and call|
+|**Asset card**|JSON Schema and scan/validate CLI|
+|**Docs**|Per-pipeline README + SKILL.md, Chinese primary with English summary|
 
 ## What's new in v0.6.0
 
@@ -69,7 +81,7 @@ Full guide: `docs/桌面版.md`.
 
 |Area|What changed|
 |---|---|
-|**Local production console**|`python scripts/gameconsole.py serve` opens a local web console for P0–P5, gates, delivery notes and decisions|
+|**Local production console**|`python scripts/gameconsole.py serve` opens a local web console for P0–P7, gates, delivery notes and decisions|
 |**Project start wizard**|Name + one-sentence idea + folder path → creates the local project and enters the P0 panel|
 |**Stage folders & versions**|`stages/00_立项/` … `stages/05_上线/` keep per-stage README, version copies and freeze snapshots|
 |**Save / Freeze / Next**|Gates run before freezing; freeze snapshots and locks; next is blocked until frozen|
@@ -89,34 +101,39 @@ Full guide: `docs/控制台使用指南.md`.
 |**Automated release checks**|`gate release` verifies the `docs/12_Demo上线清单.md` and `docs/13_多语言商店素材清单.md` requirements it can prove from files (dual input, store images, localized copy, trailer), not only that boxes look ticked|
 |**Multilingual store assets**|`templates/13_多语言商店素材清单.md` now covers per-language capsule art, screenshots, trailer, subtitles and copy|
 
-## Six stages and six gates
+## Eight pipelines and eight gates
 
 ```mermaid
 flowchart LR
-  P0[P0 Concept] --> G0{G0 Can a stranger retell it?}
-  G0 --> P1[P1 Standards and docs]
-  P1 --> G1{G1 Is every criterion judgeable?}
-  G1 --> P2[P2 Tech base + whitebox]
-  P2 --> G2{G2 Blind test passed?}
-  G2 --> P3[P3 Asset pipeline + vertical slice]
-  P3 --> G3{G3 New asset in 30 min?}
-  G3 --> P4[P4 Content production]
-  P4 --> G4{G4 Full playthrough?}
-  G4 --> P5[P5 Polish + Demo]
-  P5 --> G5{G5 Release checklist?}
-  G5 --> Ship[Ship]
+  P0[P0 Concept] --> G0{G0}
+  G0 --> P1[P1 Standards]
+  P1 --> G1{G1}
+  G1 --> P2[P2 Script]
+  P2 --> G2{G2}
+  G2 --> P3[P3 Whitebox/Tech]
+  P3 --> G3{G3}
+  G3 --> P4[P4 Art/Video]
+  P4 --> G4{G4}
+  G4 --> P5[P5 Music/Audio]
+  P5 --> G5{G5}
+  G5 --> P6[P6 Content]
+  P6 --> G6{G6}
+  G6 --> P7[P7 Release]
+  P7 --> G7{G7}
 ```
 
-|Stage|Duration|Deliverable|Gate|
-|---|---|---|---|
-|P0 Concept|1 week|One-page concept doc|A stranger can retell it|
-|P1 Standards and docs|2–3 weeks|GDD / Art Bible / Tech Plan / Numbers table|Every criterion is judgeable|
-|P2 Tech base + whitebox|3–6 weeks|Runnable project + greybox level|Blind test passed|
-|P3 Asset pipeline + vertical slice|6–12 weeks|Style anchor + asset factory + one complete level|A new asset is in-game in 30 minutes|
-|P4 Content production|13–22 weeks|All levels, enemies, story|Full playthrough|
-|P5 Polish + Demo|23–28 weeks|Performance, localization, store page, Demo|Release checklist all green|
+|Pipeline|Deliverable|Gate|
+|---|---|---|
+|P0 Concept|One-page concept|G0 retellable|
+|P1 Standards|GDD / Art Bible / Tech Plan / Manifest / Numbers|G1 judgeable|
+|P2 Script|Script bible + storyboard + IDs|G2 shootable|
+|P3 Whitebox/Tech|UE 5.8 project + 1 greybox level|G3 playable|
+|P4 Art/Video|Asset factory + style + previz/PV|G4 locked|
+|P5 Music/Audio|Themes/stems/SFX/VO/integration|G5 integrable|
+|P6 Content|All levels/enemies/story|G6 full playthrough|
+|P7 Release|Builds/cert/store/PV/loc|G7 release checklist|
 
-About 28 weeks end to end (conservative; the capacity formula in `references/01-立项.md` gives 16–20 weeks when the agent works 24 h per week). You spend 3–4 hours a week deciding and playtesting.
+Detailed guides: `docs/管线/`. Lanes can run in parallel; gates govern.
 
 ## Five-minute start
 
@@ -147,7 +164,7 @@ Hand the project directory to your agent and say one sentence:
 
 > Read `Personal_Game_Studio_UE/SKILL.md` and advance my project stage by stage. Every task ends with a delivery note and evidence.
 
-`init` copies the 14 templates, `gamecheck.py` and a `store/` directory into the project. After that, run `python scripts/gamecheck.py <subcommand> --root .` from the project root; it no longer depends on where the skill is installed.
+`init` copies the 18 templates, `gamecheck.py` and a `store/` directory into the project. After that, run `python scripts/gamecheck.py <subcommand> --root .` from the project root; it no longer depends on where the skill is installed.
 
 ## Installing into different agents
 
@@ -158,7 +175,7 @@ Hand the project directory to your agent and say one sentence:
 |**Codex / Cursor / Gemini CLI**|Put `AGENTS.md` at the project root and tell the agent to route through `SKILL.md`|
 |**Any agent**|It only needs to read Markdown and run commands; the skill is the shell, `scripts/gamecheck.py` is the body|
 
-> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.6.0`).
+> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.7.0`).
 
 ## Command reference
 
@@ -202,7 +219,7 @@ Personal_Game_Studio_UE/
 │  ├─ 05-打磨与Demo上线.md
 │  ├─ 06-风险与反模式.md
 │  └─ en/00-overview.md      # English overview of the whole workflow
-├─ templates/                # 14 templates you can fill in directly
+├─ templates/                # 18 templates (script, storyboard, audio, PV)
 ├─ scripts/
 │  ├─ gamecheck.py           # Gate validator (Python standard library, no dependencies)
 │  ├─ gameconsole.py         # Local visual console (HTTP + stage state machine)
@@ -233,7 +250,7 @@ Personal_Game_Studio_UE/
 
 ## Versioning
 
-- Versions follow [SemVer](https://semver.org/). The current version is `v0.6.0`; interfaces and file layout may still change.
+- Versions follow [SemVer](https://semver.org/). The current version is `v0.7.0`; interfaces and file layout may still change.
 - Change history lives in [CHANGELOG.md](CHANGELOG.md).
 - How the project is iterated, released and upgraded: see [docs/GitHub发布指南.md](docs/GitHub发布指南.md).
 - Console guide: [docs/控制台使用指南.md](docs/控制台使用指南.md).

@@ -2,11 +2,11 @@
 
 [中文](README.md) ｜ [English](README.en.md)
 
-**把"做游戏"拆成 6 个阶段、6 道可执行闸门，让 AI agent 按标准干活，你只做三类决策。**
+**把"做游戏"拆成 8 条生产管线、8 道可执行闸门，让 AI agent 按标准干活，你只做三类决策。**
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.6.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -32,6 +32,18 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.7.0 新增：8 管线、MCP Gateway 与文档化
+
+| 能力 | 说明 |
+|---|---|
+| 8 管线 | 立项/标准/剧本/白模技术/美术视频/音乐音频/内容/发行 |
+| 剧本 + 音乐/音频 | 新模板、新闸门、新交接 ID（SC/SH/LINE/MUS/SFX/VO） |
+| 美术 + 视频 | 分镜、Animatic、Previz、PV 子线，UE MRQ/AI 视频分开 |
+| Studio CLI | `studio.py pipelines/explain/doctor/next` |
+| MCP Gateway | 本地工具总线 POC，权限/审计/doctor/tools/call |
+| 资产卡 | JSON Schema + 扫描/校验 CLI |
+| 文档化 | 每管线 README + SKILL.md，中文为主英文摘要 |
 
 ## v0.6.0 新增：diff、证据上传、拖拽、总览与计时
 
@@ -71,7 +83,7 @@
 | 能力 | 入口 | 解决什么 |
 |---|---|---|
 | 项目启动向导 | `python scripts/gameconsole.py serve` | 填一句想法 + 选工程目录，自动创建本地工程并进入 P0 |
-| 六阶段可视化 | 浏览器 `http://127.0.0.1:8765/` | P0–P5 状态、闸门红绿灯、当前阶段一眼看清 |
+| 8 管线可视化 | 浏览器 `http://127.0.0.1:8765/` | P0–P7 状态、闸门红绿灯、当前阶段一眼看清 |
 | 环节工作台 | 文档树 + Markdown 编辑/预览 | 不改文件位置，网页直接改 `docs/` |
 | 保存 / 冻结 / 下一步 | 状态机按钮 | 冻结前跑闸门、生成快照、锁定文档；未冻结不能下一步 |
 | 每环节本地文件夹 | `stages/00_立项/` … `stages/05_上线/` | 版本副本、冻结快照、README 可直接在资源管理器打开 |
@@ -93,34 +105,41 @@
 | 发布检查自动化 | `gamecheck.py gate release --store-dir store` | 清单/双输入/商店素材/变更对账一次跑完 |
 | 多语言商店素材清单 | `templates/13_多语言商店素材清单.md` | 中英商店文案、截图、胶囊图、字幕逐项判定 |
 
-## 六阶段与六道闸门
+## 8 管线与 8 道闸门
+
+管线是并行车道，不是 8 道串行瀑布；阶段闸门负责治理，PM 负责排期。
 
 ```mermaid
 flowchart LR
   P0[P0 立项] --> G0{G0 能复述}
-  G0 --> P1[P1 标准与文档]
+  G0 --> P1[P1 标准]
   P1 --> G1{G1 可判定}
-  G1 --> P2[P2 技术底座+白模]
-  P2 --> G2{G2 盲测通过}
-  G2 --> P3[P3 资产管线+垂直切片]
-  P3 --> G3{G3 30分钟入库}
-  G3 --> P4[P4 内容生产]
-  P4 --> G4{G4 全流程通关}
-  G4 --> P5[P5 打磨+Demo]
-  P5 --> G5{G5 上线清单}
-  G5 --> Ship[发布]
+  G1 --> P2[P2 剧本]
+  P2 --> G2{G2 剧本可拍}
+  G2 --> P3[P3 白模与技术]
+  P3 --> G3{G3 白模可玩}
+  G3 --> P4[P4 美术与视频]
+  P4 --> G4{G4 风格/管线锁定}
+  G4 --> P5[P5 音乐与音频]
+  P5 --> G5{G5 音频可集成}
+  G5 --> P6[P6 内容生产]
+  P6 --> G6{G6 全流程通关}
+  G6 --> P7[P7 上线与发行]
+  P7 --> G7{G7 上线清单}
 ```
 
-| 阶段 | 周期 | 产出 | 闸门 |
-|---|---|---|---|
-| P0 立项 | 1 周 | 一页纸立项书 | 陌生人能复述 |
-| P1 标准与文档 | 2–3 周 | GDD / 美术圣经 / 技术方案 / 数值表 | 每条标准可判定 |
-| P2 技术底座 + 白模 | 3–6 周 | 可运行工程 + 灰盒关卡 | 盲测通过 |
-| P3 资产管线 + 垂直切片 | 6–12 周 | 风格锚点 + 资产工厂 + 1 关完整流程 | 新资产 30 分钟入库 |
-| P4 内容生产 | 13–22 周 | 全部关卡/敌人/剧情 | 全流程通关 |
-| P5 打磨 + Demo 上线 | 23–28 周 | 性能/本地化/商店页/Demo | 上线清单全绿 |
+| 管线 | 核心产出 | 闸门 |
+|---|---|---|
+| P0 立项 | 一页纸立项书、范围、风险 | G0 可复述 |
+| P1 标准 | GDD / 美术圣经 / 技术方案 / 资产清单 / 数值表 | G1 可判定 |
+| P2 剧本 | 剧本圣经、场景/镜头/台词/配音 ID | G2 可拍 |
+| P3 白模与技术 | UE 5.8 工程 + 1 关灰盒 + 盲测 | G3 可玩 |
+| P4 美术与视频 | 资产工厂、风格锚点、分镜/Previz、PV | G4 风格/管线锁定 |
+| P5 音乐与音频 | 主题/stems、音效、配音、混音、集成 | G5 音频可集成 |
+| P6 内容生产 | 全部关卡/敌人/剧情/收集 | G6 全流程通关 |
+| P7 上线与发行 | 打包/认证/商店/PV/多语言 | G7 上线清单 |
 
-全程约 28 周（保守排期；按 `references/01-立项.md` 的公式核算，agent 每周 24 h 时约 16–20 周）。你每周投入 3–4 小时，只做决策和试玩。
+> 详细步骤、输入输出、交接与常见错误见 `docs/管线/`；每管线都有 README + SKILL.md（中文为主，英文摘要）。
 
 ## 5 分钟上手
 
@@ -151,7 +170,7 @@ python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D
 
 > 读 `Personal_Game_Studio_UE/SKILL.md`，按阶段推进我的项目；每次任务交交付单并附证据。
 
-`init` 会把 14 份模板、`scripts/gamecheck.py` 与 `store/` 目录一起复制进项目。之后在项目根直接用 `python scripts/gamecheck.py <子命令> --root .` 即可，不依赖 skill 的安装路径。
+`init` 会把 18 份模板、`scripts/gamecheck.py` 与 `store/` 目录一起复制进项目。之后在项目根直接用 `python scripts/gamecheck.py <子命令> --root .` 即可，不依赖 skill 的安装路径。
 
 ## 安装到不同 agent
 
@@ -162,7 +181,7 @@ python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
-> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.6.0`）。
+> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.7.0`）。
 
 ## 命令速查
 
@@ -204,15 +223,20 @@ Personal_Game_Studio_UE/
 ├─ README.en.md              # English README
 ├─ SKILL.en.md               # English skill entry
 ├─ references/en/            # English overview（主 references 仍为中文）
-├─ templates/                # 14 份可直接填写的模板（含 13 多语言商店素材清单）
+├─ templates/                # 18 份可直接填写的模板（剧本/分镜/音频/视频 PV）
 ├─ scripts/
 │  ├─ gamecheck.py           # 闸门校验器（标准库，无依赖）
 │  ├─ gameconsole.py         # 本地可视化控制台（HTTP + 状态机）
 │  ├─ console_app.py         # 桌面版入口（pywebview/WebView2）
+│  ├─ studio.py              # Studio CLI：pipelines/explain/doctor/next
+│  ├─ mcp_gateway.py         # MCP Gateway POC：stdio/HTTP、权限、审计
+│  ├─ asset_registry.py      # 资产扫描/校验
 │  ├─ version.py             # 单一版本源 + 更新检查
 │  ├─ ue_import_assets.py    # UE 资产导入（材质/碰撞/LOD）
 │  └─ daily_gallery.py       # 每日截图巡览生成器
 ├─ console_web/              # 控制台前端（HTML/CSS/JS，无构建）
+├─ mcp/                      # MCP Gateway 配置与说明
+├─ schemas/                  # 资产卡 JSON Schema
 ├─ build/desktop.spec        # PyInstaller 打包配置
 ├─ build/build_desktop.ps1   # Windows 一键构建
 ├─ build/installer.iss       # Inno Setup 安装包
@@ -223,8 +247,11 @@ Personal_Game_Studio_UE/
 │  ├─ 设计说明.md            # 这套流程为什么这样设计
 │  ├─ 维护规范.md            # 章节约定/改动联动清单
 │  ├─ 控制台使用指南.md      # 控制台启动、保存/冻结/下一步、diff/计时、交接
+│  ├─ 管线/                  # 8 条管线 README + SKILL 契约
+│  ├─ 资产卡规范.md          # 资产卡字段、AI 来源与状态机
+│  ├─ ADR/0001-UE-MCP.md     # UE MCP 选型
+│  ├─ 安装包与签名.md        # 安装包与 SmartScreen
 │  ├─ 桌面版.md              # 桌面版构建、分发与更新
-│  ├─ 安装包与签名.md        # Inno Setup 与代码签名
 │  ├─ UE资产导入脚本.md      # 导入脚本使用说明
 │  ├─ 每日截图巡览.md        # 巡览生成器使用说明
 │  └─ GitHub发布指南.md      # 发布、迭代、安装、FAQ
@@ -241,7 +268,7 @@ Personal_Game_Studio_UE/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.6.0`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.7.0`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

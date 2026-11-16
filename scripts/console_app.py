@@ -83,7 +83,7 @@ def export_skill(root: Path) -> Path:
     if (target / "SKILL.md").is_file():
         return target
     target.mkdir(parents=True, exist_ok=True)
-    names = ["console_web", "templates", "references", "docs", "scripts"]
+    names = ["console_web", "templates", "references", "docs", "scripts", "mcp", "schemas"]
     for name in names:
         source = root / name
         if source.is_dir():

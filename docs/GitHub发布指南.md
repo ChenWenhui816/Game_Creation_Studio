@@ -1,10 +1,10 @@
 # GitHub 发布指南
 
-> 适用对象：本仓库的维护者（一个人，非程序出身）。｜ 当前状态：本地仓库已初始化（`main` 分支），并已发布到 https://github.com/ChenWenhui816/Personal_Game_Studio_UE （当前 `v0.6.0`，CI 绿）。｜ 读完能做到：从零把仓库推到 GitHub、发第一个 Release、之后每周 30 分钟迭代、让使用者安装与升级。
+> 适用对象：本仓库的维护者（一个人，非程序出身）。｜ 当前状态：本地仓库已初始化（`main` 分支），并已发布到 https://github.com/ChenWenhui816/Personal_Game_Studio_UE （当前 `v0.7.0`，CI 绿）。｜ 读完能做到：从零把仓库推到 GitHub、发第一个 Release、之后每周 30 分钟迭代、让使用者安装与升级。
 
 本指南所有命令均为 **Windows 11 + PowerShell** 写法，可逐行复制执行。Web 界面按钮名称以你看到的 GitHub 页面为准；GitHub 会改版，找不到按钮时按关键词搜官方文档（链接见相关小节）。
 
-> 已发布：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE> ｜ 最新 Release：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE/releases/tag/v0.6.0>
+> 已发布：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE> ｜ 最新 Release：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE/releases/tag/v0.7.0>
 >
 > 下文用 `v0.1.0` 演示“第一次发 Release”的完整流程；当前版本以仓库 Releases 页为准。
 >
@@ -176,7 +176,7 @@ git config user.email
 | 1 | 浏览器登录 GitHub 后，右上角 `+` → **New repository**（或直接打开 https://github.com/new） | — | 出现 Create a new repository 表单 |
 | 2 | Owner | 选 `ChenWenhui816` | 下拉框显示用户名 |
 | 3 | Repository name | `Personal_Game_Studio_UE`（与本地目录大小写完全一致） | 右侧出现绿色对勾 |
-| 4 | Description | `面向 UE5 单角色单机 3D 闯关游戏的 AI agent 全流程 skill：6 阶段 + 6 道可执行闸门 + 14 份模板。` | 输入框有内容 |
+| 4 | Description | `面向 UE5 单机 3D 游戏的一人工作室 OS：8 管线 + 8 道可执行闸门 + 18 份模板 + 控制台 + MCP Gateway。` | 输入框有内容 |
 | 5 | 可见性 | 选 **Public** | Public 单选被选中 |
 | 6 | Initialize this repository with | **三个都不要勾**（Add a README / Add .gitignore / Choose a license） | 三个复选框全空 |
 | 7 | 点 **Create repository** | — | 跳到 "Quick setup" 页面，显示仓库地址 |
@@ -190,7 +190,7 @@ git config user.email
 
 ```powershell
 cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE
-gh repo create Personal_Game_Studio_UE --public --source=. --remote=origin --push --description "面向 UE5 单角色单机 3D 闯关游戏的 AI agent 全流程 skill：6 阶段 + 6 道可执行闸门 + 14 份模板。"
+gh repo create Personal_Game_Studio_UE --public --source=. --remote=origin --push --description "面向 UE5 单机 3D 游戏的一人工作室 OS：8 管线 + 8 道可执行闸门 + 18 份模板 + 控制台 + MCP Gateway。"
 ```
 
 这条命令**已经包含推送**，等于自动完成第 3 节，之后直接跳到第 4 节。注意：

@@ -121,6 +121,10 @@ def make_templates(base):
         "11_周报.md": "11_周报.md",
         "12_Demo上线清单.md": "12_Demo上线清单.md",
         "13_多语言商店素材清单.md": "13_多语言商店素材清单.md",
+        "14_剧本圣经.md": "14_剧本圣经.md",
+        "15_分镜与镜头表.md": "15_分镜与镜头表.md",
+        "16_音乐音频设计.md": "16_音乐音频设计.md",
+        "17_视频PV制作单.md": "17_视频PV制作单.md",
     }
     base.mkdir(parents=True, exist_ok=True)
     for filename, key in mapping.items():

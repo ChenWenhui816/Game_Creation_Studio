@@ -1,6 +1,6 @@
 ---
 name: ue5-solo-game
-description: Production controller for a UE5 single-character, single-player 3D level-based game (bilingual entry, local visual console). Use it for concept work, game design docs / art bible / tech plan, AI art and 3D asset pipelines, UE5 whitebox and systems implementation, dual keyboard+gamepad input, level production, daily screenshot review, testing and packaging, Steam/Epic Demo release and version iteration. Routes by stage into the detailed references and runs gates with scripts/gamecheck.py.
+description: Production controller for a solo UE5 studio (bilingual entry, local visual console, 8 pipelines). Covers concept, standards, script/narrative, whitebox/tech, art/video, music/audio, content production, release/publishing. Use it for UE 5.8 development, AI art/video/audio pipelines, MCP tool bus, dual keyboard+gamepad input, screenshots, testing/packaging and Steam/console release.
 ---
 
 # UE5 Solo 3D Level-Based Game · Production Controller
@@ -9,6 +9,8 @@ description: Production controller for a UE5 single-character, single-player 3D 
 > All workflow commands: `python <skill>/scripts/gamecheck.py <subcommand> --root <project root>`.
 > Visual console: `python scripts/gameconsole.py serve` (see `docs/控制台使用指南.md`).
 > Desktop app: `python scripts/console_app.py` (build in `docs/桌面版.md`).
+> Studio CLI: `python scripts/studio.py doctor|explain|next` (see `docs/管线/README.md`).
+> MCP tool bus: `python scripts/mcp_gateway.py` (see `mcp/README.md`).
 
 ## Start here: do these three things first
 
@@ -34,20 +36,19 @@ If the user only says "I want to make a game" and there is no project yet, start
 
 ## Stage routing table
 
-|Situation|Load|Run first|One-line test|
+|Pipeline|Load|Run first|One-line test|
 |---|---|---|---|
-|No project / only an idea|`references/01-立项.md`|`init`|No `docs/00_立项书.md`|
-|Concept doc is weak / G0 fails|`references/01-立项.md`|`doc check --stage 0`|A stranger cannot retell it|
-|Need GDD / art bible / tech plan / numbers table|`references/02-文档与标准.md`|`gate spec`|G1 not passed|
-|Standards frozen, need engineering and game feel|`references/04-引擎实现.md`|`gate whitebox`|Character cannot run and jump, or the blind test failed|
-|Producing or reviewing art assets|`references/03-美术资产管线.md`|`gate assets`|Asset manifest and directories disagree|
-|Building the vertical slice or content|`references/04-引擎实现.md`|`gate slice`|No complete level flow|
-|Batch-import assets / daily screenshot review|`references/04-引擎实现.md`|`ue_import_assets.py --dry-run` / `daily_gallery.py`|Manual clicking or judging drift by feel|
-|Polish, store page, Demo|`references/05-打磨与Demo上线.md`|`gate release`|Release/multilingual checklist not fully ticked, or dual input/store assets missing|
-|Scope out of control / repeated rework / need to cut|`references/06-风险与反模式.md`|—|Change orders piling up, weekly reports blocked repeatedly|
-|Want the visual console / create a project|`docs/控制台使用指南.md`|`gameconsole.py serve`|No `.gameconsole/state.json`|
-|Want the Windows desktop app|`docs/桌面版.md`|`console_app.py` / PyInstaller|No desktop build yet|
-|First time on the project / explaining the workflow to someone|`references/00-总览与协作.md`|—|—|
+|P0 Concept|`docs/管线/00_立项/README.md`|`studio explain 00`|No concept doc|
+|P1 Standards|`docs/管线/01_标准/README.md`|`gate spec`|G1 not passed|
+|P2 Script|`docs/管线/02_剧本/README.md`|`gate script`|SC/SH/LINE ids incomplete|
+|P3 Whitebox & tech|`docs/管线/03_白模与技术/README.md`|`gate whitebox`|Cannot run/jump or blind test failed|
+|P4 Art & video|`docs/管线/04_美术与视频/README.md`|`gate art`|Manifest/PV doc not passed|
+|P5 Music & audio|`docs/管线/05_音乐与音频/README.md`|`gate audio`|MUS/SFX/VO or integration missing|
+|P6 Content|`docs/管线/06_内容生产/README.md`|`gate content`|No full playthrough|
+|P7 Release|`docs/管线/07_上线与发行/README.md`|`gate release`|Release/store checklist not green|
+|Assets / daily screenshots|`docs/管线/04_美术与视频/README.md`|`asset_registry.py scan` / `daily_gallery.py`|Manual import or guessing|
+|MCP / tool adoption|`mcp/README.md`|`mcp_gateway.py doctor`|No health/permissions|
+|First time / explaining the workflow|`references/00-总览与协作.md`|—|—|
 
 ## Standard loop for every task
 
@@ -70,11 +71,12 @@ If the user only says "I want to make a game" and there is no project yet, start
 |`gamecheck.py init --dir . --name "Project"`|Scaffold the project|Day one|
 |`gamecheck.py doc check --stage N`|Stage documents are complete|Before each stage|
 |`gamecheck.py gate spec`|G1 standards frozen|Before work starts, and every Monday|
-|`gamecheck.py gate whitebox`|G2 whitebox|End of whitebox|
-|`gamecheck.py gate assets`|G3 asset compliance|Before each asset batch enters|
-|`gamecheck.py gate slice`|G3 vertical slice|End of the slice|
-|`gamecheck.py gate content`|G4 content complete|End of content production|
-|`gamecheck.py gate release`|G5 release, including the automated release checks|Before shipping the Demo|
+|`gamecheck.py gate script`|G2 script shootable|End of script/storyboard|
+|`gamecheck.py gate whitebox`|G3 whitebox playable|End of whitebox|
+|`gamecheck.py gate art`|G4 art/video/PV + manifest|Before asset batch/PV|
+|`gamecheck.py gate audio`|G5 audio integrable|After VO/mix/integration|
+|`gamecheck.py gate content`|G6 full playthrough|End of content production|
+|`gamecheck.py gate release`|G7 release, including automated checks|Before shipping the Demo|
 |`gamecheck.py numbers check`|Jump physics is self-consistent|Every numbers change|
 |`gamecheck.py manifest check`|Manifest vs directories|Every day|
 |`gamecheck.py change check`|Change orders vs the asset manifest, both ways|After every change|
@@ -115,7 +117,7 @@ Any change to scope, numbers or style, or anything that costs more than one day 
 
 |File|Contents|
 |---|---|
-|`references/00-总览与协作.md`|Six stages, three decision types, gates, weekly rhythm, cost model|
+|`references/00-总览与协作.md`|Governance overview, three decision types, gates, weekly rhythm, cost model (8 pipelines in docs/管线)|
 |`references/01-立项.md`|P0: from an idea to a one-page concept doc|
 |`references/02-文档与标准.md`|P1: GDD / art bible / tech plan / numbers / change orders|
 |`references/03-美术资产管线.md`|P3: concept → 3D → textures → rigging → UE import|
@@ -123,7 +125,7 @@ Any change to scope, numbers or style, or anything that costs more than one day 
 |`references/05-打磨与Demo上线.md`|P5: polish, Steam/Epic, release checklist|
 |`references/06-风险与反模式.md`|20 traps, the cut protocol, retrospectives|
 |`references/en/00-overview.md`|English overview of the six stages, gates, pipelines and cost model|
-|`templates/`|14 templates you can fill in directly|
+|`templates/`|18 templates you can fill in directly|
 |`scripts/gamecheck.py`|Gate validator (standard library, no dependencies)|
 |`scripts/gameconsole.py`|Local visual console: wizard, stages, save/freeze/next, agent inbox|
 |`scripts/console_app.py`|Windows desktop entry (pywebview / WebView2)|

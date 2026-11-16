@@ -219,7 +219,7 @@ class V06Tests(ConsoleBase):
         diff = self.project.stage_diff("P0")
         self.assertGreaterEqual(diff["changed"], 1)
         insight = self.project.stage_insight("P0")
-        self.assertTrue(any(item["stage"] == "P2" for item in insight["suggestions"]), insight)
+        self.assertTrue(any(item["stage"] == "P6" for item in insight["suggestions"]), insight)
 
     def test_change_diff(self):
         self.project.save_artifact("docs/00_立项书.md", valid_brief(), None)

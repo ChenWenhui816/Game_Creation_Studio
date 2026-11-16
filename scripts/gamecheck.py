@@ -109,6 +109,15 @@ REQUIRED_SECTIONS = {
     "13_多语言商店素材清单.md": [
         "语言矩阵", "商店文案", "截图与预告片", "胶囊图与素材", "元数据与合规", "审核清单",
     ],
+    "14_剧本圣经.md": [
+        "一句话故事", "主题与基调", "世界观", "角色", "三幕结构",
+        "场景表", "台词与分支", "下游交接",
+    ],
+    "15_分镜与镜头表.md": ["镜头表", "分镜说明", "声音与字幕", "制作备注"],
+    "16_音乐音频设计.md": [
+        "音乐主题", "循环与自适应", "音效清单", "配音清单", "混音与响度", "引擎集成",
+    ],
+    "17_视频PV制作单.md": ["PV 目标", "镜头清单", "资产需求", "音乐与字幕", "输出规格"],
 }
 
 # 目录型文档 → 用哪套章节规则
@@ -182,12 +191,13 @@ NUM_ALIAS_HINT = "、".join(
     for aliases in NUM_KEY_ALIASES.values()
 )
 
-# init 要复制的模板（全部 14 份；07/08 以 _模板_ 前缀放进项目，不计入闸门数量）
+# init 要复制的模板（全部 18 份；07/08 以 _模板_ 前缀放进项目，不计入闸门数量）
 TEMPLATE_FILES = [
     "00_立项书.md", "01_游戏设计文档.md", "02_美术圣经.md", "03_技术方案.md",
     "04_关卡设计.md", ASSET_CSV, NUM_CSV, "07_交付单.md", "08_验收单.md",
     "09_变更单.md", "10_测试记录.md", "11_周报.md", "12_Demo上线清单.md",
-    "13_多语言商店素材清单.md",
+    "13_多语言商店素材清单.md", "14_剧本圣经.md", "15_分镜与镜头表.md",
+    "16_音乐音频设计.md", "17_视频PV制作单.md",
 ]
 TEMPLATE_DEST = {
     "00_立项书.md": "docs/00_立项书.md",
@@ -204,6 +214,10 @@ TEMPLATE_DEST = {
     "11_周报.md": "docs/11_周报/_模板_周报.md",
     "12_Demo上线清单.md": "docs/12_Demo上线清单.md",
     "13_多语言商店素材清单.md": "docs/13_多语言商店素材清单.md",
+    "14_剧本圣经.md": "docs/14_剧本圣经.md",
+    "15_分镜与镜头表.md": "docs/15_分镜与镜头表.md",
+    "16_音乐音频设计.md": "docs/16_音乐音频设计.md",
+    "17_视频PV制作单.md": "docs/17_视频PV制作单.md",
 }
 INIT_DIRS = [
     "docs",
@@ -1311,7 +1325,7 @@ def cmd_gate(args, root: Path) -> int:
                         hint="示例：--min-assets 24")
             finish(report, args, "gate content", root)
             return 2
-        report.ok("闸门 content：内容生产（阶段 P4）——文档阶段 4 + 每关验收清单全勾选 + 测试记录无占位符 + 已入库 ≥ 关卡数×8（默认下限 24）")
+        report.ok("闸门 content：内容生产（P6）——文档阶段 4 + 每关验收清单全勾选 + 测试记录无占位符 + 已入库 ≥ 关卡数×8（默认下限 24）")
         _track(report, tips, "文档阶段 4",
                lambda: check_documents(root, report, 4, {"10_测试记录.md"}),
                "补齐 docs/00–04、07/08、10 与 11_周报 ≥4 份及其章节")
@@ -1351,7 +1365,7 @@ def cmd_gate(args, root: Path) -> int:
         if report.failed:
             report.warn("G1 不通过时不要进入 P2 白模；标准书改完重跑本闸门")
     elif gate == "whitebox":
-        report.ok("闸门 whitebox：白模可玩（阶段 P2）——文档阶段 2 + 数值自洽 + 盲测证据")
+        report.ok("闸门 whitebox：白模可玩（P3）——文档阶段 2 + 数值自洽 + 盲测证据")
         _track(report, tips, "文档阶段 2",
                lambda: check_documents(root, report, 2),
                "补齐 docs/00–03、04_关卡设计/ 至少 1 份关卡文档、05/06")
@@ -1387,10 +1401,10 @@ def cmd_gate(args, root: Path) -> int:
         if report.failed:
             report.warn("切片闸门证明“管线可复现”：1 个完整关卡 + 核心系统 + 成品美术，缺一不可")
     elif gate == "release":
-        report.ok("闸门 release：Demo 上线（阶段 P5）——文档阶段 5 + 12/13 清单全勾选 + 双输入 + 商店素材 + 变更联动")
+        report.ok("闸门 release：上线与发行（P7）——文档阶段 5 + 12/13 清单全勾选 + 双输入 + 商店素材 + 变更联动")
         _track(report, tips, "文档阶段 5",
                lambda: check_documents(root, report, 5, {"10_测试记录.md"}),
-               "补齐 P0–P5 全部文档与 H2 章节")
+               "补齐 P0–P7 核心文档与 H2 章节")
         _track(report, tips, "Demo 上线清单勾选",
                lambda: check_release_checkboxes(root, report, "12_Demo上线清单.md"),
                "逐项完成并改成 - [x]；不做的项写明理由后从清单删除")
@@ -1408,8 +1422,59 @@ def cmd_gate(args, root: Path) -> int:
                "每张变更单写 CO- 编号与影响资产；清单 source/note 引用的编号必须存在")
         if report.failed:
             report.warn("上线闸门不允许“基本完成”：任何未勾选项、缺图或未验证输入都算不通过")
+    elif gate == "script":
+        report.ok("闸门 script：剧本可拍（P2）——剧本圣经 + 分镜镜头表 + 场景/台词/镜头 ID")
+        for name in ("14_剧本圣经.md", "15_分镜与镜头表.md"):
+            path = root / DOCS_DIR / name
+            label = "%s/%s" % (DOCS_DIR, name)
+            if not path.is_file():
+                report.fail("%s 缺失" % label, hint="把 templates/%s 复制到 docs/ 后填写" % name)
+                continue
+            check_md_document(report, path, name, label)
+        script_text = read_text(root / DOCS_DIR / "14_剧本圣经.md") if (root / DOCS_DIR / "14_剧本圣经.md").is_file() else ""
+        shot_text = read_text(root / DOCS_DIR / "15_分镜与镜头表.md") if (root / DOCS_DIR / "15_分镜与镜头表.md").is_file() else ""
+        if not re.search(r"SC-\d+", script_text):
+            report.fail("剧本缺少场景 ID（SC-001）", hint="在场景表写 SC-001、SC-002…")
+        else:
+            report.ok("剧本场景 ID 存在（SC-）")
+        if not re.search(r"LINE-\d+", script_text):
+            report.fail("剧本缺少台词 ID（LINE-001）", hint="在台词表写 LINE-001…")
+        else:
+            report.ok("台词 ID 存在（LINE-）")
+        if not re.search(r"SH-\d+", shot_text):
+            report.fail("分镜缺少镜头 ID（SH-001）", hint="在镜头表写 SH-001…")
+        else:
+            report.ok("分镜镜头 ID 存在（SH-）")
+        if report.failed:
+            report.warn("G2 剧本闸门只证明“可拍/可配音/可交付美术”；好不好看由人评审")
+    elif gate == "art":
+        report.ok("闸门 art：美术与视频（P4）——PV 制作单 + 资产清单逐行校验")
+        path = root / DOCS_DIR / "17_视频PV制作单.md"
+        if not path.is_file():
+            report.fail("%s/17_视频PV制作单.md 缺失" % DOCS_DIR, hint="复制 templates/17_视频PV制作单.md 并填写")
+        else:
+            check_md_document(report, path, "17_视频PV制作单.md", "%s/17_视频PV制作单.md" % DOCS_DIR)
+        _track(report, tips, "资产清单", lambda: check_manifest(root, report),
+               "按行修正资产清单，并登记 assets/ 下所有文件")
+        if report.failed:
+            report.warn("G4 只验证美术/视频交接和资产清单；风格由 D2/D3 人审")
+    elif gate == "audio":
+        report.ok("闸门 audio：音乐与音频（P5）——音乐/音效/配音/混音/引擎集成")
+        path = root / DOCS_DIR / "16_音乐音频设计.md"
+        if not path.is_file():
+            report.fail("%s/16_音乐音频设计.md 缺失" % DOCS_DIR, hint="复制 templates/16_音乐音频设计.md 并填写")
+        else:
+            check_md_document(report, path, "16_音乐音频设计.md", "%s/16_音乐音频设计.md" % DOCS_DIR)
+        text = read_text(path) if path.is_file() else ""
+        for token, label in (("MUS-", "音乐主题 ID"), ("SFX-", "音效 ID"), ("VO-", "配音 ID")):
+            if not re.search(token + r"\d+", text):
+                report.fail("音频设计缺少%s（%s）" % (label, token), hint="在对应表格写 %s001 起" % token)
+            else:
+                report.ok("%s 存在（%s）" % (label, token))
+        if report.failed:
+            report.warn("G5 只验证音频设计可集成；最终听感由 D3 试听")
     else:
-        report.fail("未知闸门：%s" % gate, hint="可选：spec / whitebox / assets / slice / content / release")
+        report.fail("未知闸门：%s" % gate, hint="可选：spec / script / whitebox / art / audio / content / release")
         return finish(report, args, "gate %s" % gate, root)
 
     for tip in tips:
@@ -1868,11 +1933,14 @@ def build_parser():
     gate_sub = p_gate.add_subparsers(dest="gate_cmd", metavar="<闸门>", required=True)
     gate_help = {
         "spec": "G1 规格锁定：文档阶段 1 + 数值 + 表头 + 标准书表格",
-        "whitebox": "G2 白模可玩：文档阶段 2 + 数值 + 盲测证据",
-        "assets": "G3 资产管线：文档阶段 1 + 资产清单逐行校验",
-        "slice": "G3 垂直切片：文档阶段 3 + 验收通过 + 已入库 ≥10",
-        "content": "G4 内容生产：文档阶段 4 + 每关验收清单全勾选 + 已入库 ≥ 关卡数×8",
-        "release": "G5 Demo 上线：文档阶段 5 + 12/13 清单全勾选 + 双输入 + 商店素材 + 变更联动",
+        "script": "G2 剧本可拍：剧本圣经 + 分镜镜头表 + 场景/台词/镜头 ID",
+        "whitebox": "G3 白模可玩：文档阶段 2 + 数值 + 盲测证据",
+        "art": "G4 美术与视频：PV 制作单 + 资产清单逐行校验",
+        "audio": "G5 音乐音频：音乐/音效/配音/混音/引擎集成",
+        "assets": "旧 G3 资产管线：文档阶段 1 + 资产清单逐行校验",
+        "slice": "旧 G3 垂直切片：文档阶段 3 + 验收通过 + 已入库 ≥10",
+        "content": "G6 内容生产：文档阶段 4 + 每关验收清单全勾选 + 已入库 ≥ 关卡数×8",
+        "release": "G7 上线发行：文档阶段 5 + 12/13 清单全勾选 + 双输入 + 商店素材 + 变更联动",
     }
     gate_parsers = {}
     for gate_name, help_text in gate_help.items():

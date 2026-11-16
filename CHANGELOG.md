@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-17
+
+### Added
+
+- 8 管线结构：立项、标准、剧本、白模与技术、美术与视频、音乐与音频、内容生产、上线与发行。
+- 剧本圣经/分镜镜头表/音乐音频设计/视频 PV 制作单模板。
+- 新闸门：`gate script` / `gate art` / `gate audio`。
+- 8 管线 README + SKILL.md 契约（中文为主，英文摘要）。
+- `scripts/studio.py`：pipelines / explain / doctor / next。
+- MCP Gateway POC：配置、doctor/list/tools/call、权限与审计；ADR 0001 UE MCP 选型。
+- 资产卡 JSON Schema、资产注册表扫描/校验 CLI。
+- UE 5.8 锁定与 5.9/6.0 升级策略文档。
+
+### Changed
+
+- 控制台从 6 阶段扩展到 8 管线，旧项目自动迁移新阶段状态。
+- 文档目录新增 docs/管线、mcp、schemas、ADR。
+
 ## [0.6.0] - 2026-11-16
 
 ### Added

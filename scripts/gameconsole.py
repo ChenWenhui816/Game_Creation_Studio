@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.6.0）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.0）。
 
-零第三方依赖的本地 Web 控制台，把 skill 的六阶段、闸门、交付单
+零第三方依赖的本地 Web 控制台，把 skill 的 8 条管线、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
 
 启动（新建项目）：
@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.6.0"
+CONSOLE_VERSION = _version.VERSION if _version else "0.7.0"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -119,32 +119,46 @@ STAGES = [
         "desc": "GDD / 美术圣经 / 技术方案 / 资产清单 / 数值表冻结。",
     },
     {
-        "id": "P2", "name": "技术底座 + 白模", "folder": "02_白模",
+        "id": "P2", "name": "剧本与叙事", "folder": "02_剧本",
+        "docs": ["docs/14_剧本圣经.md", "docs/15_分镜与镜头表.md"],
+        "gate": ["gate", "script"],
+        "gate_label": "G2 剧本可拍",
+        "desc": "故事、角色、场景、台词、镜头与下游交接能直接开工。",
+    },
+    {
+        "id": "P3", "name": "白模与技术", "folder": "03_白模与技术",
         "docs": ["docs/04_关卡设计", "docs/10_测试记录.md"],
         "gate": ["gate", "whitebox"],
-        "gate_label": "G2 盲测通过",
-        "desc": "工程能跑、角色能跑跳、1 关灰盒可玩。",
+        "gate_label": "G3 白模可玩",
+        "desc": "UE 5.8 工程能跑、角色能跑跳、1 关灰盒可玩。",
     },
     {
-        "id": "P3", "name": "资产管线 + 垂直切片", "folder": "03_资产与切片",
-        "docs": ["docs/07_交付单", "docs/08_验收单"],
-        "gate": ["gate", "slice"],
-        "gate_label": "G3 30 分钟入库",
-        "desc": "资产工厂打通，1 关完整流程 + Boss + UI。",
+        "id": "P4", "name": "美术与视频", "folder": "04_美术与视频",
+        "docs": ["docs/07_交付单", "docs/08_验收单", "docs/17_视频PV制作单.md"],
+        "gate": ["gate", "art"],
+        "gate_label": "G4 风格与管线锁定",
+        "desc": "资产工厂、风格锚点、分镜/PV 与 UE 导入验证。",
     },
     {
-        "id": "P4", "name": "内容生产", "folder": "04_内容生产",
+        "id": "P5", "name": "音乐与音频", "folder": "05_音乐与音频",
+        "docs": ["docs/16_音乐音频设计.md"],
+        "gate": ["gate", "audio"],
+        "gate_label": "G5 音频可集成",
+        "desc": "主题、stems、音效、配音、混音与 MetaSounds/Wwise 集成。",
+    },
+    {
+        "id": "P6", "name": "内容生产", "folder": "06_内容生产",
         "docs": ["docs/04_关卡设计", "docs/11_周报"],
         "gate": ["gate", "content"],
-        "gate_label": "G4 全流程通关",
+        "gate_label": "G6 全流程通关",
         "desc": "全部关卡、敌人、剧情与收集内容。",
     },
     {
-        "id": "P5", "name": "打磨 + Demo 上线", "folder": "05_上线",
+        "id": "P7", "name": "上线与发行", "folder": "07_上线与发行",
         "docs": ["docs/12_Demo上线清单.md", "docs/13_多语言商店素材清单.md"],
         "gate": ["gate", "release"],
-        "gate_label": "G5 上线清单",
-        "desc": "性能、本地化、商店页、Demo 与发布。",
+        "gate_label": "G7 上线清单",
+        "desc": "性能、本地化、商店页、Demo、主机/PC 发布。",
     },
 ]
 STAGE_BY_ID = {item["id"]: item for item in STAGES}
@@ -156,13 +170,17 @@ DOC_STAGE = {
     "docs/03_技术方案.md": "P1",
     "docs/05_资产清单.csv": "P1",
     "docs/06_数值表.csv": "P1",
-    "docs/10_测试记录.md": "P2",
-    "docs/04_关卡设计": "P4",
-    "docs/07_交付单": "P3",
-    "docs/08_验收单": "P3",
-    "docs/11_周报": "P4",
-    "docs/12_Demo上线清单.md": "P5",
-    "docs/13_多语言商店素材清单.md": "P5",
+    "docs/14_剧本圣经.md": "P2",
+    "docs/15_分镜与镜头表.md": "P2",
+    "docs/04_关卡设计": "P3",
+    "docs/10_测试记录.md": "P3",
+    "docs/07_交付单": "P4",
+    "docs/08_验收单": "P4",
+    "docs/17_视频PV制作单.md": "P4",
+    "docs/16_音乐音频设计.md": "P5",
+    "docs/11_周报": "P6",
+    "docs/12_Demo上线清单.md": "P7",
+    "docs/13_多语言商店素材清单.md": "P7",
     "docs/09_变更单": None,
 }
 STATUSES = ("drafting", "review", "frozen", "blocked", "change")
@@ -238,6 +256,18 @@ class Project:
         self.ensure_layout()
         self.state.setdefault("time", {"entries": [], "active": None})
         self.state.setdefault("changes", [])
+        stages = self.state.setdefault("stages", {})
+        changed = False
+        for sid in STAGE_IDS:
+            if sid not in stages:
+                stages[sid] = {"status": "drafting", "gate": None, "frozen_at": None,
+                               "snapshot": None, "updated_at": now_iso()}
+                changed = True
+        if changed:
+            try:
+                self.save_state()
+            except OSError:
+                pass
         if self.state.get("console_version") != CONSOLE_VERSION:
             self.state["console_version"] = CONSOLE_VERSION
             self.state["skill_version"] = CONSOLE_VERSION
@@ -706,12 +736,14 @@ class Project:
         text = " ".join(doc["path"] + "\n" + doc["diff"] for doc in diff["docs"])
         index = STAGE_IDS.index(stage_id)
         rules = [
-            (r"玩法|核心循环|关卡|剧情|GDD", "P2", ["docs/04_关卡设计"], "玩法/关卡变化需要白模与关卡设计同步"),
-            (r"美术|色板|风格|UI|模型|贴图|动画", "P3", ["docs/02_美术圣经", "docs/05_资产清单.csv"], "美术或资产变化需要更新资产清单与风格锚点"),
-            (r"技术|架构|性能|输入|手柄|键鼠", "P2", ["docs/03_技术方案"], "技术/输入变化需要同步技术方案与验收"),
-            (r"数值|跳跃|攻击|血量|速度|伤害", "P2", ["docs/06_数值表.csv"], "数值变化需要跑 numbers check 并更新测试记录"),
-            (r"商店|Demo|发布|本地化|预告片", "P5", ["docs/12_Demo上线清单.md", "docs/13_多语言商店素材清单.md"], "上线相关内容需要更新发布清单"),
-            (r"资产|清单|fbx|贴图|材质", "P3", ["docs/05_资产清单.csv"], "资产变化需要更新清单并跑 manifest check"),
+            (r"玩法|核心循环|关卡|剧情|GDD", "P6", ["docs/04_关卡设计"], "玩法/关卡变化需要内容生产与关卡设计同步"),
+            (r"美术|色板|风格|UI|模型|贴图|动画|分镜|视频|PV", "P4", ["docs/02_美术圣经", "docs/05_资产清单.csv", "docs/17_视频PV制作单.md"], "美术/视频变化需要更新风格、清单或 PV 制作单"),
+            (r"技术|架构|性能|输入|手柄|键鼠", "P3", ["docs/03_技术方案"], "技术/输入变化需要同步技术方案与验收"),
+            (r"数值|跳跃|攻击|血量|速度|伤害", "P3", ["docs/06_数值表.csv"], "数值变化需要跑 numbers check 并更新测试记录"),
+            (r"商店|Demo|发布|本地化|预告片", "P7", ["docs/12_Demo上线清单.md", "docs/13_多语言商店素材清单.md"], "上线相关内容需要更新发布清单"),
+            (r"资产|清单|fbx|贴图|材质", "P4", ["docs/05_资产清单.csv"], "资产变化需要更新清单并跑 manifest check"),
+            (r"音乐|音效|配音|对白|混音", "P5", ["docs/16_音乐音频设计.md"], "音乐/音频变化需要更新设计、stems 与集成"),
+            (r"剧本|台词|场景|角色|镜头", "P4", ["docs/14_剧本圣经.md", "docs/15_分镜与镜头表.md"], "剧本变化需要同步分镜、美术、配音与视频"),
         ]
         suggestions = []
         for pattern, target, docs, reason in rules:

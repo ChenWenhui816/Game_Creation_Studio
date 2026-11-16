@@ -2,7 +2,7 @@
 
 > Stages: P0–P5 ｜ Load when: taking over a project, unsure what comes next, or explaining the overall design to someone ｜ Upstream: none ｜ Downstream: `01-立项.md` → `05-打磨与Demo上线.md`
 
-> **Detailed references and templates are Chinese-first; use SKILL.en.md for routing and translate sections on demand.** The stage names, gate names, decision names and file names below are canonical and must not be translated away.
+> **v0.7 uses 8 pipelines: see `docs/管线/README.en.md`.** This overview retains the earlier six-stage governance model for historical context. Detailed references/templates are Chinese-first; use SKILL.en.md for routing.
 
 ## What this workflow solves
 

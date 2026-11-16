@@ -77,3 +77,6 @@ DerivedDataCache/
 Binaries/
 Intermediate/
 Saved/
+
+# MCP gateway audit log
+mcp/mcp-audit.jsonl

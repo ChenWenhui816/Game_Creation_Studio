@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Studio Asset Card",
+  "type": "object",
+  "required": ["id", "path", "kind", "sha256", "size", "status"],
+  "properties": {
+    "id": {"type": "string", "description": "稳定 ID，默认 sha256 前 16 位"},
+    "path": {"type": "string", "description": "项目内相对路径"},
+    "name": {"type": "string"},
+    "kind": {"type": "string", "enum": ["model", "texture", "material", "animation", "audio", "video", "image", "ui", "level", "data", "other"]},
+    "sha256": {"type": "string"},
+    "size": {"type": "integer"},
+    "status": {"type": "string", "enum": ["untracked", "draft", "review", "approved", "in_game", "deprecated"]},
+    "license": {"type": "string", "description": "自有 / CC0 / 商业授权 / AI 服务条款"},
+    "source": {"type": "string", "description": "Blender / Substance / AI / 外部采购"},
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "tool": {"type": "string"},
+        "model": {"type": "string"},
+        "prompt": {"type": "string"},
+        "seed": {"type": "string"},
+        "service": {"type": "string"},
+        "url": {"type": "string"}
+      }
+    },
+    "dcc_source": {"type": "string"},
+    "export_file": {"type": "string"},
+    "ue_path": {"type": "string"},
+    "import_settings": {"type": "object"},
+    "lod": {"type": "integer"},
+    "faces": {"type": "integer"},
+    "textures": {"type": "array", "items": {"type": "string"}},
+    "dependencies": {"type": "array", "items": {"type": "string"}},
+    "stage": {"type": "string"},
+    "owner": {"type": "string"},
+    "updated_at": {"type": "string"}
+  }
+}

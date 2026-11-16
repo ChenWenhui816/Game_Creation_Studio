@@ -20,6 +20,8 @@ datas = [
     (str(scripts), "scripts"),
     (str(ROOT / "references"), "references"),
     (str(ROOT / "docs"), "docs"),
+    (str(ROOT / "mcp"), "mcp"),
+    (str(ROOT / "schemas"), "schemas"),
 ]
 for name in ("SKILL.md", "SKILL.en.md", "README.md", "README.en.md", "AGENTS.md",
              "CHANGELOG.md", "LICENSE"):

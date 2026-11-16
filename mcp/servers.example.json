@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "note": "本地 MCP 工具总线配置。复制为 mcp/servers.json 后按本机路径修改；不要提交 token。",
+  "servers": {
+    "ue-native": {
+      "transport": "http",
+      "url": "http://127.0.0.1:30010/mcp",
+      "scopes": ["read", "write"],
+      "note": "UE 5.8 官方原生 MCP；先在 Editor 启用 Unreal MCP / Toolset Registry / Editor Tools。"
+    },
+    "ue-mcp": {
+      "transport": "stdio",
+      "command": ["npx", "-y", "ue-mcp"],
+      "scopes": ["read", "write"],
+      "note": "备选：db-lyon/ue-mcp，包装 Epic 原生 MCP，带 guardrail/checkpoint。"
+    },
+    "blender": {
+      "transport": "stdio",
+      "command": ["uvx", "blender-mcp"],
+      "scopes": ["read", "write"],
+      "note": "Blender MCP；首次运行前确认 Blender 已安装且插件已启用。"
+    },
+    "comfyui": {
+      "transport": "http",
+      "url": "http://127.0.0.1:8188/mcp",
+      "scopes": ["read", "execute"],
+      "note": "本地 ComfyUI；用于概念/贴图生成，输出必须登记来源与模型。"
+    },
+    "filesystem": {
+      "transport": "stdio",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."],
+      "scopes": ["read"],
+      "note": "只读示例；生产环境请限制到项目目录。"
+    }
+  }
+}

@@ -1,10 +1,12 @@
 ---
 name: ue5-solo-game
-description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入口）。用于立项、写游戏设计文档/美术圣经/技术方案、AI 美术与 3D 资产管线、UE5 白模与系统实现、键鼠+手柄双输入、关卡制作、每日截图巡览、测试打包、Steam/Epic Demo 上线与版本迭代。按阶段路由到 references 下的细分流程，并用 scripts/gamecheck.py 跑闸门。
+description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控（中英双语入口）。覆盖 8 条管线：立项、标准、剧本、白模与技术、美术与视频、音乐与音频、内容生产、上线发行。用于 UE 5.8 开发、AI 美术/视频/音频管线、MCP 工具总线、键鼠+手柄双输入、关卡制作、截图巡览、测试打包、Steam/主机 Demo 上线与版本迭代。按管线路由到 references / docs/管线，并用 scripts/gamecheck.py 跑闸门。
 
 > English entry: [SKILL.en.md](SKILL.en.md) ｜ 中文入口：本文件
 > 可视化控制台：`python scripts/gameconsole.py serve`（说明见 `docs/控制台使用指南.md`）
 > 桌面版：`python scripts/console_app.py`（构建见 `docs/桌面版.md`）
+> 工作室 CLI：`python scripts/studio.py doctor|explain|next`（说明见 `docs/管线/README.md`）
+> MCP 工具总线：`python scripts/mcp_gateway.py`（说明见 `mcp/README.md`）
 ---
 
 # UE5 单机 3D 闯关游戏 · 制作总控
@@ -36,19 +38,21 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 
 ## 阶段路由表
 
-| 现状 | 加载 | 先跑 | 一句话判据 |
+| 管线 | 加载 | 先跑 | 一句话判据 |
 |---|---|---|---|
-| 没有项目 / 只有想法 | `references/01-立项.md` | `init` | 没有 `docs/00_立项书.md` |
-| 立项书写不出 / G0 不过 | `references/01-立项.md` | `doc check --stage 0` | 陌生人复述不出来 |
-| 需要 GDD / 美术圣经 / 技术方案 / 数值表 | `references/02-文档与标准.md` | `gate spec` | G1 未过 |
-| 标准已冻结，要工程和手感 | `references/04-引擎实现.md` | `gate whitebox` | 角色不能跑跳，或盲测未过 |
-| 要产出或审核美术资产 | `references/03-美术资产管线.md` | `gate assets` | 资产清单/目录对不上 |
-| 要做垂直切片或内容生产 | `references/04-引擎实现.md` | `gate slice` | 没有 1 关完整流程 |
-| 要批量导入资产 / 每日看截图 | `references/04-引擎实现.md` | `ue_import_assets.py --dry-run` / `daily_gallery.py` | 导入靠手点、跑偏靠感觉 |
-| 要做打磨、商店、Demo | `references/05-打磨与Demo上线.md` | `gate release` | 上线清单/13 清单未全勾，或缺双输入/商店素材 |
-| 范围失控 / 连续返工 / 不知道怎么砍 | `references/06-风险与反模式.md` | — | 变更单堆积、周报连续阻塞 |
-| 要用可视化控制台 / 新建工程 | `docs/控制台使用指南.md` | `gameconsole.py serve` | 没有 `.gameconsole/state.json` |
-| 第一次接手 / 要向人解释流程 | `references/00-总览与协作.md` | — | — |
+| P0 立项 | `docs/管线/00_立项/README.md` | `studio explain 00` | 没有 `docs/00_立项书.md` |
+| P1 标准 | `docs/管线/01_标准/README.md` | `gate spec` | G1 未过 |
+| P2 剧本 | `docs/管线/02_剧本/README.md` | `gate script` | 场景/镜头/台词 ID 不齐 |
+| P3 白模与技术 | `docs/管线/03_白模与技术/README.md` | `gate whitebox` | 角色不能跑跳或盲测未过 |
+| P4 美术与视频 | `docs/管线/04_美术与视频/README.md` | `gate art` | 资产清单/PV 制作单未过 |
+| P5 音乐与音频 | `docs/管线/05_音乐与音频/README.md` | `gate audio` | 音乐/音效/配音 ID 或集成未过 |
+| P6 内容生产 | `docs/管线/06_内容生产/README.md` | `gate content` | 没有全流程通关 |
+| P7 上线与发行 | `docs/管线/07_上线与发行/README.md` | `gate release` | 上线清单/13 清单未全勾 |
+| 资产管线 / 每日截图 | `docs/管线/04_美术与视频/README.md` | `asset_registry.py scan` / `daily_gallery.py` | 导入靠手点、资产靠猜 |
+| 范围失控 / 返工 / 砍功能 | `references/06-风险与反模式.md` | — | 变更单堆积、周报连续阻塞 |
+| 控制台 / 新建工程 | `docs/控制台使用指南.md` | `gameconsole.py serve` | 没有 `.gameconsole/state.json` |
+| MCP / 工具接入 | `mcp/README.md` | `mcp_gateway.py doctor` | 工具状态不可见/权限不清 |
+| 第一次接手 | `references/00-总览与协作.md` | — | — |
 
 ## 每次任务的标准循环
 
@@ -71,11 +75,12 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 | `gamecheck.py init --dir . --name "项目名"` | 生成项目骨架 | 项目第一天 |
 | `gamecheck.py doc check --stage N` | 阶段文档齐备 | 每阶段进入前 |
 | `gamecheck.py gate spec` | G1 标准冻结 | 开工前、每周一 |
-| `gamecheck.py gate whitebox` | G2 白模 | 白模结束 |
-| `gamecheck.py gate assets` | G3 资产合规 | 每批资产入库前 |
-| `gamecheck.py gate slice` | G3 垂直切片 | 切片结束 |
-| `gamecheck.py gate content` | G4 内容完成 | 内容生产结束 |
-| `gamecheck.py gate release` | G5 上线（12/13 清单+双输入+商店素材） | 发 Demo 前 |
+| `gamecheck.py gate script` | G2 剧本可拍 | 剧本/分镜结束 |
+| `gamecheck.py gate whitebox` | G3 白模可玩 | 白模结束 |
+| `gamecheck.py gate art` | G4 美术/视频/资产清单 | 资产入库/PV 前 |
+| `gamecheck.py gate audio` | G5 音频可集成 | 配音/混音/集成后 |
+| `gamecheck.py gate content` | G6 全流程通关 | 内容生产结束 |
+| `gamecheck.py gate release` | G7 上线（12/13 清单+双输入+商店素材） | 发 Demo 前 |
 | `gamecheck.py numbers check` | 跳跃物理自洽 | 每次改数值 |
 | `gamecheck.py manifest check` | 清单与目录对账 | 每天 |
 | `gamecheck.py change check` | 变更单↔资产清单双向对账 | 每次变更后 |
@@ -103,17 +108,20 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 
 | 文件 | 内容 |
 |---|---|
-| `references/00-总览与协作.md` | 六阶段、三类决策、闸门、周节奏、成本模型 |
+| `references/00-总览与协作.md` | 总览、三类决策、闸门、周节奏、成本模型（8 管线见 docs/管线） |
 | `references/01-立项.md` | P0：从想法到一页纸立项书 |
 | `references/02-文档与标准.md` | P1：GDD/美术圣经/技术方案/数值/变更 |
-| `references/03-美术资产管线.md` | P3：概念 → 3D → 贴图 → 绑定 → UE 导入 |
-| `references/04-引擎实现.md` | P2–P4：工程、白模、系统、关卡、打包 |
-| `references/05-打磨与Demo上线.md` | P5：打磨、Steam/Epic、上线清单 |
+| `references/03-美术资产管线.md` | P4：概念 → 3D → 贴图 → 绑定 → UE 导入/视频 |
+| `references/04-引擎实现.md` | P3/P6：工程、白模、系统、关卡、打包 |
+| `references/05-打磨与Demo上线.md` | P7：打磨、Steam/主机、上线清单 |
 | `references/06-风险与反模式.md` | 20 个坑、砍功能协议、复盘 |
-| `templates/` | 14 份可直接填写的模板（含 13 多语言商店素材清单） |
+| `templates/` | 18 份可直接填写的模板（含剧本/分镜/音频/视频 PV） |
 | `scripts/gamecheck.py` | 闸门校验器（标准库，无依赖） |
 | `scripts/gameconsole.py` | 本地可视化控制台（新建向导/阶段/保存/冻结/下一步） |
 | `scripts/console_app.py` | 桌面版入口（pywebview/WebView2） |
+| `scripts/studio.py` | Studio CLI：pipelines/explain/doctor/next |
+| `scripts/mcp_gateway.py` | MCP Gateway POC：stdio/HTTP、权限、审计 |
+| `scripts/asset_registry.py` | 资产扫描与校验 |
 | `build/desktop.spec` | PyInstaller 打包配置 |
 | `docs/桌面版.md` | 桌面版构建、分发与更新 |
 | `docs/安装包与签名.md` | Inno Setup 安装包与代码签名 |
@@ -121,6 +129,11 @@ description: UE5 单角色单机 3D 闯关游戏制作总控（中英双语入�
 | `build/sign.ps1` | 可选代码签名（无证书跳过） |
 | `console_web/` | 控制台前端（无构建） |
 | `docs/控制台使用指南.md` | 控制台完整使用说明 |
+| `docs/管线/` | 8 管线 README + SKILL 契约 |
+| `mcp/` | MCP Gateway 配置与说明 |
+| `mcp/servers.example.json` | UE/Blender/ComfyUI 配置示例 |
+| `docs/ADR/0001-UE-MCP.md` | UE MCP 选型 ADR |
+| `schemas/asset_card.schema.json` | 资产卡 schema |
 | `scripts/ue_import_assets.py` | UE 资产导入（材质/碰撞/LOD） |
 | `scripts/daily_gallery.py` | 每日截图巡览生成器 |
 | `references/en/00-overview.md` | English overview（中文 references 仍是主源） |

@@ -1,0 +1,7 @@
+{
+  "default": "deny",
+  "read_only_tools": ["project.get_status", "asset.list", "asset.inspect", "level.list", "screenshot.capture"],
+  "approval_required": ["asset.delete", "level.delete", "build.package", "release.publish", "python.execute", "shell.run"],
+  "deny_tools": ["shell.run", "python.execute"],
+  "notes": "Gateway POC：写操作/删除/打包默认需要人工 --yes；不要给 agent 无限制 shell/python。"
+}
