@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SignPath artifact configuration: main executable inside the GitHub artifact ZIP.
+     Create in SignPath project as Artifact Configuration slug "app". -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="Personal_Game_Studio_UE.exe"
+             product-name="Personal Game Studio UE"
+             product-version="${version}"
+             file-version="${version}"
+             company-name="Personal Game Studio"
+             description="Personal Game Studio UE desktop console">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

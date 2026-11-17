@@ -80,3 +80,6 @@ Saved/
 
 # MCP gateway audit log
 mcp/mcp-audit.jsonl
+
+# local self-signed cert / private key (never commit)
+build/certs/

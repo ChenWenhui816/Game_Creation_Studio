@@ -1,4 +1,4 @@
-﻿# 构建 Inno Setup 安装包（可先签名 exe）
+﻿﻿# 构建 Inno Setup 安装包（可先签名 exe）
 param([string]$Version = "")
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot

@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   build-windows:
+    # 配置 SignPath 后由 signpath-windows.yml 生成已签名产物，避免同一 release 重复上传。
+    if: ${{ vars.SIGNPATH_PROJECT_SLUG == '' }}
     runs-on: windows-latest
     env:
       SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}

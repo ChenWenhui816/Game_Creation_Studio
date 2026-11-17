@@ -104,6 +104,7 @@
 | 工作室运行 | 6 角色 + 8 管线矩阵、冲刺/里程碑模板 |
 | 冻结交接 | 冻结自动写交接包 + P0→P1 文档播种；agent_bridge 可自动派发 |
 | DSH 对接 | 「让 DSH 继续」复用已登录账号，当前/新会话推进 |
+| 代码签名 | PFX / 证书存储 / CI secrets 三种方式，`build/sign.ps1` |
 | 填写引导 | 黄色【待填】高亮、固定章节灰锁、填写区面板 |
 
 ## v0.6.0 新增：diff、证据上传、拖拽、总览与计时
@@ -315,6 +316,8 @@ Personal_Game_Studio_UE/
 │  ├─ DeepSeekHarness对接.md # DSH headless / 当前会话
 │  ├─ 创作流程.md            # 想法 → P0 → P1 → P3
 │  ├─ UIUX设计系统.md        # 高星 UIUX skill 的落地
+│  ├─ 代码签名指南.md        # Windows 安装包签名
+│  ├─ SignPath免费签名申请.md # 免费公共可信签名
 │  ├─ 资产卡规范.md          # 资产卡字段、AI 来源与状态机
 │  ├─ ADR/0001-UE-MCP.md     # UE MCP 选型
 │  ├─ 安装包与签名.md        # 安装包与 SmartScreen
