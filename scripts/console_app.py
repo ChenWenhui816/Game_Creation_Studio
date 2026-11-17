@@ -110,15 +110,20 @@ def acquire_single_instance():
 
 
 def find_project(explicit, force_new: bool):
-    if force_new:
+    # 启动时不再自动打开上次项目；用户先在开始页选择。
+    if force_new or not explicit:
         return None
-    if explicit:
-        return Path(explicit).expanduser().resolve()
+    return Path(explicit).expanduser().resolve()
+
+
+def remember_project(project) -> None:
     settings = load_settings()
-    last = settings.get("last_project")
-    if last and (Path(last) / ".gameconsole" / "state.json").is_file():
-        return Path(last)
-    return None
+    root = str(project.root)
+    recent = [item for item in settings.get("recent_projects", []) if item != root]
+    recent.insert(0, root)
+    settings["last_project"] = root
+    settings["recent_projects"] = recent[:8]
+    save_settings(settings)
 
 
 def wait_health(url: str, timeout: float = 10.0) -> bool:
@@ -324,12 +329,17 @@ def main(argv=None) -> int:
         except gameconsole.ConsoleError:
             project = None
     if project is not None:
-        settings = load_settings()
-        settings["last_project"] = str(project.root)
-        save_settings(settings)
+        remember_project(project)
 
     global _SERVER
     server = gameconsole.ConsoleServer(("127.0.0.1", args.port), project)
+    server.on_project_open = remember_project
+    settings = load_settings()
+    recent = list(settings.get("recent_projects", []))
+    last = settings.get("last_project")
+    if last and last not in recent and (Path(last) / ".gameconsole" / "state.json").is_file():
+        recent.insert(0, last)
+    server.recent_projects = recent[:8]
     _SERVER = server
     server.update_download = download_app_update
     server.update_apply = apply_app_update

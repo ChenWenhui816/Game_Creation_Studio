@@ -6,7 +6,7 @@ inputs: GDD | 技术方案 | 剧本场景需求
 outputs: UE 5.8 工程 | 可玩灰盒关卡 | docs/10_测试记录.md | 盲测证据
 gates: G3 白模可玩
 owner: studio
-version: 0.7.6
+version: 0.8.0
 ---
 
 # 03 · 白模与技术 · Agent Contract

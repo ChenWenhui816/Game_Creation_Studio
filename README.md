@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.7.6-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.8.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -32,6 +32,16 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.8.0 新增：启动页、极光图标、跨文档传递
+
+- 启动先选择打开项目/新建项目；
+- GCS Aurora 图标 + 青/靛蓝/紫极光色板；
+- 三栏独立滚动；
+- 破坏性解除冻结；
+- DSH 进度窗与当前会话 fallback；
+- 跨文档「传递下游」；
+- 收件箱/变更单/证据墙用途说明。
 
 ## v0.7.6 变更：UIUX 设计系统
 
@@ -317,7 +327,7 @@ Personal_Game_Studio_UE/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.7.6`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.8.0`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

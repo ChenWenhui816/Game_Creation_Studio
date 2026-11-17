@@ -49,9 +49,11 @@ POST /api/handoff/run
 
 session：
 
-- current：使用当前 DSH 会话（默认，DSH_SESSION_ID）；
+- current：尝试使用当前 DSH 会话（DSH_SESSION_ID）；
 - new：新开一个 DSH 会话，避免打断当前对话；
 - 其他值：按 session id 恢复。
+
+当前 DSH 桌面会话可能运行在 `ptc` preset 下，headless 一次性 runner 无法接管；控制台会自动 fallback 到新会话，日志里会标 `FALLBACK`。
 
 状态：
 

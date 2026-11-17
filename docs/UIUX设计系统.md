@@ -1,6 +1,6 @@
 # UIUX 设计系统 / Console Design System
 
-> 版本：v0.7.6 ｜ 日期：2026-11-17
+> 版本：v0.8.0 ｜ 日期：2026-11-17
 > 来源：nextlevelbuilder/ui-ux-pro-max-skill（150.6k stars，MIT，2026-11-16 更新）
 > 应用范围：console_web/ 的制作控制台。
 
@@ -27,31 +27,31 @@ developer dashboard admin panel desktop app dense data table kanban timeline pro
 - Pattern：Real-Time / Operations（状态、指标、实时数据）
 - Style：Glassmorphism（低透明度分层 + 背景模糊，控制用量）
 - Typography：Fira Sans（正文）+ Fira Code（数字/代码）
-- Color：Dark tech + status green
+- Color：Dark tech + aurora teal/indigo
 - Anti-patterns：慢更新、无自动化、浅色默认
 
 ## 3. 令牌
 
 | 角色 | 值 | CSS 变量 |
 |---|---|---|
-| Background | #0F172A | --bg |
-| Elevated | #131C2F / #1B2336 | --bg-2 / --bg-3 |
+| Background | #0B1026 | --bg |
+| Elevated | #111C44 / #1A2248 | --bg-2 / --bg-3 |
 | Border | rgba(148,163,184,.18) | --line-soft |
 | Text | #F8FAFC | --text |
 | Muted | #94A3B8 | --muted |
-| Primary/CTA | #22C55E | --accent |
-| Secondary | #38BDF8 | --accent-2 |
+| Primary/CTA | #2DD4BF | --accent |
+| Secondary | #818CF8 / #4338CA | --accent-2 / --indigo |
 | Warning | #F59E0B | --warn |
 | Danger | #EF4444 | --danger |
-| Success | #22C55E | --ok |
+| Aurora purple | #A855F7 | --purple |
 | Radius | 12px | --radius |
 | Font | Fira Sans / Fira Code | --font-sans / --font-mono |
 
 ## 4. 落地
 
 - 深色玻璃卡片：低透明度渐变 + 12px 模糊 + 1px 细边；
-- 绿色主按钮/激活态；青色作为信息强调；
-- 统一 focus-visible：2px 绿色外框；
+- 青色主按钮/激活态；靛蓝作为信息强调；紫色仅用于极光高光；
+- 统一 focus-visible：2px 青色外框；
 - prefers-reduced-motion 关闭动画；
 - 1280/900px 两档响应式；
 - 自定义滚动条；

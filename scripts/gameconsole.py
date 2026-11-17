@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.6）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.8.0）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的 8 条管线、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.7.6"
+CONSOLE_VERSION = _version.VERSION if _version else "0.8.0"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -239,6 +239,17 @@ class ConsoleError(Exception):
         self.status = status
         self.detail = detail or {}
 
+
+DOWNSTREAM_DOCS = {
+    "docs/00_立项书.md": ["docs/01_游戏设计文档.md", "docs/02_美术圣经.md", "docs/03_技术方案.md"],
+    "docs/01_游戏设计文档.md": ["docs/03_技术方案.md", "docs/06_数值表.csv", "docs/02_美术圣经.md"],
+    "docs/02_美术圣经.md": ["docs/05_资产清单.csv", "docs/17_视频PV制作单.md"],
+    "docs/03_技术方案.md": ["docs/04_关卡设计", "docs/10_测试记录.md"],
+    "docs/06_数值表.csv": ["docs/03_技术方案.md", "docs/10_测试记录.md"],
+    "docs/14_剧本圣经.md": ["docs/04_美术与视频/README.md", "docs/16_音乐音频设计.md"],
+    "docs/15_分镜与镜头表.md": ["docs/17_视频PV制作单.md", "docs/16_音乐音频设计.md"],
+    "docs/16_音乐音频设计.md": ["docs/04_美术与视频/README.md"],
+}
 
 class Project:
     """一个游戏项目的控制台视图；文档本体仍在 docs/。"""
@@ -988,6 +999,19 @@ class Project:
         target = STAGE_BY_ID[to_stage]
         facts = self._brief_facts()
         prompt = self._handoff_prompt(from_stage, to_stage, facts)
+        diff = self.stage_diff(from_stage)
+        changed = [item["path"] for item in diff.get("docs", [])]
+        downstream = []
+        for rel in changed:
+            downstream.extend(DOWNSTREAM_DOCS.get(rel, []))
+        downstream = [rel for rel in dict.fromkeys(downstream) if (self.root / rel).exists()]
+        if changed:
+            prompt += "\n\n本阶段已改动文档：\n" + "\n".join("- " + rel + " (+%d/-%d)" % (
+                next((item["added"] for item in diff["docs"] if item["path"] == rel), 0),
+                next((item["removed"] for item in diff["docs"] if item["path"] == rel), 0)) for rel in changed)
+        if downstream:
+            prompt += "\n\n下游一致性检查（必须先读再改）：\n" + "\n".join("- " + rel for rel in downstream)
+            prompt += "\n\n不要只改当前文档；如果源文档改动影响下游，必须在本次任务里一起同步。"
         folder = self.console / "handoff"
         folder.mkdir(parents=True, exist_ok=True)
         name = "%s_%s_to_%s.md" % (stamp(), from_stage, to_stage)
@@ -1050,6 +1074,53 @@ class Project:
         return {"stage": stage_id, "snapshot": rel_posix(snap, self.root), "files": files,
                 "frozen_at": freeze_data["frozen_at"], "handoff": handoff}
 
+
+
+
+
+    def propagate_prompt(self, source_rel: str) -> dict:
+        source_rel = source_rel.replace(chr(92), "/").lstrip("/")
+        source = self.root / source_rel
+        if not source.is_file():
+            raise ConsoleError("源文档不存在：%s" % source_rel, 404)
+        targets = [rel for rel in DOWNSTREAM_DOCS.get(source_rel, []) if (self.root / rel).exists()]
+        if not targets:
+            raise ConsoleError("没有配置该文档的下游目标，或目标文件不存在", 400)
+        prompt = "跨文档一致性传递。\n源文档：%s\n下游文档：\n%s\n请只更新受影响部分，检查数值/键名/状态/性能预算，跑对应闸门并交证据；不要改冻结范围。" % (
+            source_rel, "\n".join("- " + rel for rel in targets))
+        folder = self.console / "propagation"
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / ("%s_%s.md" % (stamp(), source.stem))
+        path.write_text(prompt, encoding="utf-8")
+        self.audit("propagation.create", source_rel, {"targets": targets, "path": rel_posix(path, self.root)})
+        return {"source": source_rel, "targets": targets,
+                "path": rel_posix(path, self.root), "prompt": prompt}
+
+    def unfreeze(self, stage_id: str, confirmation: str = "") -> dict:
+        self.stage_def(stage_id)
+        if self.stage_status(stage_id) != "frozen":
+            raise ConsoleError("当前阶段未冻结，无法解除", 409)
+        if confirmation.strip() != stage_id:
+            raise ConsoleError("解除冻结是破坏性操作；请输入阶段 ID %s 确认" % stage_id, 400)
+        old = dict(self.state["stages"][stage_id])
+        self.state["stages"][stage_id].update({
+            "status": "drafting",
+            "frozen_at": None,
+            "snapshot": None,
+            "last_snapshot": old.get("snapshot"),
+            "updated_at": now_iso(),
+        })
+        self.state["current_stage"] = stage_id
+        self.audit("stage.unfreeze", stage_id, {
+            "last_snapshot": old.get("snapshot"),
+            "confirmation": confirmation,
+            "destructive": True,
+        })
+        self.save_state()
+        self.write_stage_readme(stage_id)
+        return {"stage": stage_id, "status": "drafting",
+                "last_snapshot": old.get("snapshot"),
+                "message": "已解除冻结；旧快照保留，可随时重新冻结"}
     def next_stage_action(self, stage_id: str) -> dict:
         if stage_id != self.state.get("current_stage"):
             raise ConsoleError("只能推进当前阶段", 400)
@@ -1235,8 +1306,19 @@ def _start_dsh_handoff(project, handoff_path, session_id=""):
         handle.write("\n=== %s START ===\n%s\n\n" % (now_iso(), prompt))
 
     def worker():
+        nonlocal session
         try:
-            result = dsh_bridge.run(prompt, project.root, session, timeout=1800)
+            result = dsh_bridge.run(prompt, project.root, session, timeout=1800,
+                                    log_path=log_path, json_events=True)
+            failure_text = (result.get("stdout", "") + result.get("stderr", "")).lower()
+            if not result.get("ok") and session and ("one-shot runner does not compose" in failure_text or "agent preset" in failure_text):
+                with log_path.open("a", encoding="utf-8") as handle:
+                    handle.write("\n=== %s FALLBACK ===\n当前会话 preset 不兼容 headless，自动改用新会话。\n" % now_iso())
+                session = ""
+                _DSH_RUN["session"] = "new"
+                _DSH_RUN["fallback"] = True
+                result = dsh_bridge.run(prompt, project.root, "", timeout=1800,
+                                        log_path=log_path, json_events=True)
             with log_path.open("a", encoding="utf-8") as handle:
                 handle.write("\n=== %s DONE ===\n%s\nSTDERR:\n%s\n" % (
                     now_iso(), result.get("stdout", ""), result.get("stderr", "")))
@@ -1250,6 +1332,26 @@ def _start_dsh_handoff(project, handoff_path, session_id=""):
     threading.Thread(target=worker, daemon=True).start()
     return {"started": True, "session": session or "new", "handoff": rel_posix(path, project.root),
             "log": rel_posix(log_path, project.root)}
+
+
+def _dsh_status(project) -> dict:
+    data = dict(_DSH_RUN)
+    log_path = project.console / "dsh-agent.log"
+    if log_path.is_file():
+        try:
+            lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+            data["log_tail"] = "\n".join(lines[-80:])
+        except OSError:
+            data["log_tail"] = ""
+    else:
+        data["log_tail"] = ""
+    started = data.get("started")
+    if started and data.get("running"):
+        try:
+            data["elapsed_seconds"] = int((datetime.now() - datetime.fromisoformat(started)).total_seconds())
+        except ValueError:
+            pass
+    return data
 
 class ConsoleServer(ThreadingHTTPServer):
     daemon_threads = True
@@ -1302,6 +1404,20 @@ class Handler(BaseHTTPRequestHandler):
         except (UnicodeDecodeError, ValueError):
             raise ConsoleError("请求体不是合法 JSON", 400)
 
+
+    def _set_project(self, project):
+        self.server.project = project
+        root = str(project.root)
+        recent = [root] + [item for item in getattr(self.server, "recent_projects", []) if item != root]
+        self.server.recent_projects = recent[:8]
+        callback = getattr(self.server, "on_project_open", None)
+        if callback:
+            try:
+                callback(project)
+            except Exception:  # noqa: BLE001
+                pass
+        return project
+
     def _project(self):
         project = getattr(self.server, "project", None)
         if project is None:
@@ -1348,6 +1464,8 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/update":
                 info = _version.check_latest() if _version else {"ok": False, "error": "version 模块缺失"}
                 self._ok(info)
+            elif path == "/api/projects":
+                self._ok({"recent": list(getattr(self.server, "recent_projects", []))})
             elif path == "/api/state":
                 project = getattr(self.server, "project", None)
                 if project is None:
@@ -1384,7 +1502,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/handoff":
                 self._ok(self._project().ensure_handoff(query.get("stage", ["P0"])[0]))
             elif path == "/api/handoff/status":
-                self._ok(dict(_DSH_RUN))
+                self._ok(_dsh_status(self._project()))
             elif path == "/api/config":
                 self._project()
                 self._ok({"root": str(self.server.project.root),
@@ -1415,11 +1533,24 @@ class Handler(BaseHTTPRequestHandler):
                     payload.get("platform", "Windows PC（Steam Demo），1080p 60 fps"),
                     payload.get("scale", "小"), payload.get("engine", "5.8"),
                     bool(payload.get("force")))
-                self.server.project = project
+                self._set_project(project)
+                self._ok(project.summary())
+            elif path == "/api/project/open":
+                raw = payload.get("path", "").strip()
+                if not raw:
+                    raise ConsoleError("请选择项目文件夹", 400)
+                root = Path(raw).expanduser().resolve()
+                if not root.is_dir():
+                    raise ConsoleError("文件夹不存在：%s" % root, 404)
+                try:
+                    project = Project(root)
+                except ConsoleError:
+                    project = Project.adopt(root)
+                self._set_project(project)
                 self._ok(project.summary())
             elif path == "/api/adopt":
                 project = Project.adopt(Path(payload.get("path", "")))
-                self.server.project = project
+                self._set_project(project)
                 self._ok(project.summary())
             elif path == "/api/save":
                 project = self._project()
@@ -1437,12 +1568,22 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/freeze":
                 project = self._project()
                 self._ok(project.freeze(payload.get("stage", "")))
+            elif path == "/api/unfreeze":
+                project = self._project()
+                self._ok(project.unfreeze(payload.get("stage", ""), payload.get("confirm", "")))
+            elif path == "/api/propagate":
+                project = self._project()
+                self._ok(project.propagate_prompt(payload.get("path", "")))
+            elif path == "/api/propagate/run":
+                project = self._project()
+                self._ok(_start_dsh_handoff(project, payload.get("path", ""),
+                                            payload.get("session", "")))
             elif path == "/api/handoff/run":
                 project = self._project()
                 self._ok(_start_dsh_handoff(project, payload.get("path", ""),
                                             payload.get("session", "")))
             elif path == "/api/handoff/status":
-                self._ok(dict(_DSH_RUN))
+                self._ok(_dsh_status(self._project()))
             elif path == "/api/next":
                 project = self._project()
                 self._ok(project.next_stage_action(payload.get("stage", "")))

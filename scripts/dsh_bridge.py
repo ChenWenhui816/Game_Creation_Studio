@@ -89,27 +89,57 @@ def ensure_profile() -> None:
     )
 
 
-def build_command(project: Path, session_id: str = "", permission: str = "workspace-write") -> list:
+def build_command(project: Path, session_id: str = "", permission: str = "workspace-write",
+                  json_events: bool = False) -> list:
     ensure_profile()
     cmd = [str(dsh_exe()), str(dsh_bin()), "--profile", PROFILE,
            "--permission-mode", permission, "--approval-policy", "never",
            "--add-dir", str(project)]
     if session_id:
         cmd += ["--session-id", session_id]
+    if json_events:
+        cmd.append("--json")
     cmd.append("-")
     return cmd
 
 
-def run(prompt: str, project: Path, session_id: str = "", timeout: int = 1800) -> dict:
+def run(prompt: str, project: Path, session_id: str = "", timeout: int = 1800,
+        log_path: Path | None = None, json_events: bool = False) -> dict:
     project = project.expanduser().resolve()
-    cmd = build_command(project, session_id)
+    cmd = build_command(project, session_id, json_events=json_events)
     env = dict(os.environ, ELECTRON_RUN_AS_NODE="1")
     started = time.time()
-    proc = subprocess.run(cmd, cwd=str(project), input=prompt, capture_output=True,
-                          text=True, encoding="utf-8", errors="replace", timeout=timeout, env=env)
-    return {"ok": proc.returncode == 0, "exit": proc.returncode,
-            "stdout": proc.stdout[-12000:], "stderr": proc.stderr[-12000:],
-            "seconds": round(time.time() - started, 1)}
+    output = []
+    handle = None
+    try:
+        if log_path is not None:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            handle = log_path.open("a", encoding="utf-8")
+        proc = subprocess.Popen(cmd, cwd=str(project), stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, encoding="utf-8", errors="replace", env=env)
+        try:
+            proc.stdin.write(prompt)
+            proc.stdin.close()
+        except Exception:  # noqa: BLE001
+            pass
+        deadline = time.time() + timeout
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            output.append(line)
+            if handle is not None:
+                handle.write(line)
+                handle.flush()
+            if time.time() > deadline:
+                proc.kill()
+                break
+        exit_code = proc.wait(timeout=30)
+    finally:
+        if handle is not None:
+            handle.close()
+    text = "".join(output)
+    return {"ok": exit_code == 0, "exit": exit_code,
+            "stdout": text[-12000:], "stderr": "", "seconds": round(time.time() - started, 1)}
 
 
 def main(argv=None):

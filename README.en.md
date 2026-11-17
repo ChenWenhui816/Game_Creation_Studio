@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.7.6-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.8.0-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -30,6 +30,16 @@ The most dangerous failure for a solo developer plus an AI agent is not "cannot 
 |The agent reports "done" every week, but the build is not what you asked for|Delivery note (交付单) + evidence + weekly screenshot tour|
 |Scope keeps growing, so the game never ships|Cut list + capacity accounting + monthly retrospective|
 |Store page and ratings are considered only at the end|Store page starts 6 months early; G5 release checklist|
+
+## What's new in v0.8.0
+
+- Start screen: open project / new project / recent.
+- GCS Aurora icon and teal/indigo/purple palette.
+- Independently scrolling three-column layout.
+- Destructive unfreeze with typed confirmation.
+- DSH progress window and current-session fallback.
+- Cross-document downstream propagation.
+- Inbox/change/evidence purpose text.
 
 ## What's new in v0.7.6
 
@@ -288,7 +298,7 @@ Personal_Game_Studio_UE/
 
 ## Versioning
 
-- Versions follow [SemVer](https://semver.org/). The current version is `v0.7.6`; interfaces and file layout may still change.
+- Versions follow [SemVer](https://semver.org/). The current version is `v0.8.0`; interfaces and file layout may still change.
 - Change history lives in [CHANGELOG.md](CHANGELOG.md).
 - How the project is iterated, released and upgraded: see [docs/GitHub发布指南.md](docs/GitHub发布指南.md).
 - Console guide: [docs/控制台使用指南.md](docs/控制台使用指南.md).

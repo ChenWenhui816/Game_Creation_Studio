@@ -399,7 +399,7 @@ function renderTopbar() {
   const current = state ? state.current_stage : '';
   const currentStage = state ? state.stages.find(function (s) { return s.id === current; }) : null;
   return '<header class="topbar">' +
-    '<div class="brand"><div class="logo">GF</div><div>' +
+    '<div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div>' +
     '<h1>' + esc(project.name || '制作控制台') + '</h1>' +
     '<div class="sub">' + esc(project.path || '本地单机 · 零依赖') + '</div>' +
     '</div></div>' +
@@ -525,6 +525,7 @@ function openChanges() {
           '<button class="btn tiny" data-reject="' + esc(item.id) + '">拒绝</button>' : '') + '</div></li>';
     }).join('') : '<li class="empty">暂无变更单</li>';
     openModal('变更单',
+      '<p class="tag">作用：已冻结阶段要改文档时，先建变更单 → 批准 → 阶段进入变更中 → 改完重新冻结生效。未冻结阶段可直接改，不用变更单。</p>' +
       '<div class="change-form"><label>阶段</label><select id="change-stage">' + options + '</select>' +
       '<label>标题</label><input id="change-title" placeholder="例如：P1 增加双输入验收">' +
       '<label>原因</label><textarea id="change-reason" rows="3" placeholder="为什么改、影响哪些文档/资产"></textarea>' +
@@ -578,7 +579,7 @@ function openEvidence() {
           '<span>' + esc(item.name) + '</span><small>' + esc(item.mtime.replace('T', ' ')) + '</small></a>';
       }).join('') + '</div>';
     }
-    openModal('证据墙', html);
+    openModal('证据墙', '<p class="tag">作用：验收/交付/上线时保存截图、录屏、日志；不是每次编辑都必须上传。冻结交接时 agent 的最新证据可作为审核依据。</p>' + html);
     const input = document.getElementById('evidence-file');
     const drop = document.getElementById('evidence-drop');
     if (input) input.addEventListener('change', function () { uploadEvidence(input.files); });
@@ -861,7 +862,7 @@ function renderStagePage() {
       return '<button class="doc-item" data-path="' + esc(doc.path) + '"><span class="dot ' + (doc.exists ? (doc.locked ? 'lock' : 'ok') : '') + '"></span><span class="path">' + esc(doc.path.replace('docs/', '')) + '</span></button>';
     }).join('') + '</div></section>' +
     '<section class="card editor-card" id="editor-card"><div class="editor-head"><div class="editor-title"><strong id="doc-title">选择左侧文档</strong><span id="doc-sub">保存后会生成版本副本</span></div>' +
-    '<div class="editor-tools"><button class="btn" id="btn-fields">填写区</button><button class="btn" id="btn-preview">预览</button><button class="btn primary" id="btn-save">保存</button></div></div>' +
+    '<div class="editor-tools"><button class="btn" id="btn-fields">填写区</button><button class="btn" id="btn-preview">预览</button><button class="btn" id="btn-propagate">传递下游</button><button class="btn primary" id="btn-save">保存</button></div></div>' +
     '<div class="fill-panel" id="fill-panel" hidden></div>' +
     '<div class="editor-body" id="editor-body"><textarea id="editor" spellcheck="false" placeholder="选择左侧文档开始编辑…"></textarea><div class="preview" id="preview"></div></div></section>' +
     '<aside class="side-col">' +
@@ -871,7 +872,9 @@ function renderStagePage() {
     '<div class="card side-card"><h3>闸门</h3><div class="gate-box" id="gate-box">' + gateHtml(stage) + '</div>' +
     '<div class="btn-row" style="margin-top:10px"><button class="btn" id="btn-gate">运行闸门</button>' +
     '<button class="btn primary" id="btn-freeze"' + (stage.status === 'frozen' ? ' disabled' : '') + '>冻结</button>' +
+    '<button class="btn danger" id="btn-unfreeze"' + (stage.status === 'frozen' ? '' : ' disabled') + '>解除冻结</button>' +
     '<button class="btn" id="btn-handoff"' + (stage.status === 'frozen' ? '' : ' disabled') + '>交接包</button>' +
+    '<button class="btn" id="btn-dsh-progress">DSH 进度</button>' +
     '<button class="btn" id="btn-next"' + (stage.status === 'frozen' ? '' : ' disabled') + '>下一步</button></div></div>' +
     '<div class="card side-card"><h3>版本</h3><div id="version-box"><div class="empty">选择文档后显示版本</div></div></div>' +
     '<div class="card side-card"><h3>本地目录</h3><div class="kv"><span>阶段</span><b>stages/' + esc(stage.folder) + '</b><span>快照</span><b>' + esc(stage.snapshot || '—') + '</b></div>' +
@@ -887,10 +890,13 @@ function renderStagePage() {
   document.getElementById('btn-save').addEventListener('click', saveArtifact);
   document.getElementById('btn-gate').addEventListener('click', runGate);
   document.getElementById('btn-freeze').addEventListener('click', freezeStage);
+  document.getElementById('btn-unfreeze').addEventListener('click', unfreezeStage);
   document.getElementById('btn-handoff').addEventListener('click', requestHandoff);
+  document.getElementById('btn-dsh-progress').addEventListener('click', openDshProgress);
   document.getElementById('btn-next').addEventListener('click', nextStage);
   document.getElementById('btn-preview').addEventListener('click', togglePreview);
   document.getElementById('btn-fields').addEventListener('click', toggleFillPanel);
+  document.getElementById('btn-propagate').addEventListener('click', propagateDoc);
   bindPreviewEditing();
   document.getElementById('btn-add-section').addEventListener('click', addSection);
   document.getElementById('btn-add-check').addEventListener('click', addCheckItem);
@@ -1000,6 +1006,8 @@ function openArtifact(path) {
     editor.disabled = !!info.locked || !info.exists;
     const saveBtn = document.getElementById('btn-save');
     if (saveBtn) saveBtn.disabled = editor.disabled;
+    const propBtn = document.getElementById('btn-propagate');
+    if (propBtn) propBtn.disabled = editor.disabled;
     title.textContent = path.replace('docs/', '');
     sub.textContent = info.locked ? '已冻结 · 需变更单' : (info.exists ? '可编辑 · 保存会生成版本' : '尚未创建');
     S.liveEditable = /\.md$/i.test(path) && !info.locked;
@@ -1165,6 +1173,104 @@ function freezeStage() {
 
 
 
+
+
+function propagateDoc() {
+  if (!S.selected) { toast('先选择文档', true); return; }
+  toast('正在生成下游传递包…');
+  api('/api/propagate', { method: 'POST', body: { path: S.selected } }).then(function (data) {
+    openModal('传递下游 · ' + esc(data.source),
+      '<p class="tag">目标：' + esc((data.targets || []).join('、')) + '</p>' +
+      '<p>把源文档的改动交给 agent，只更新受影响的下游文档。</p>' +
+      '<textarea id="propagation-prompt" class="handoff-prompt" readonly></textarea>' +
+      '<div class="btn-row"><button class="btn primary" id="btn-prop-dsh">让 DSH 更新下游</button>' +
+      '<button class="btn" id="btn-prop-new">DSH 新会话</button>' +
+      '<button class="btn" id="btn-prop-copy">复制给 Agent</button></div>' +
+      '<p class="tag" id="prop-status">DSH 会读取传递包并修改下游文档；先 commit。</p>');
+    const area = document.getElementById('propagation-prompt');
+    if (area) area.value = data.prompt || '';
+    const copy = document.getElementById('btn-prop-copy');
+    if (copy) copy.addEventListener('click', function () {
+      if (navigator.clipboard) navigator.clipboard.writeText(area ? area.value : '').then(function () { toast('已复制'); });
+      else if (area) { area.select(); document.execCommand('copy'); }
+    });
+    const run = function (mode) {
+      api('/api/propagate/run', { method: 'POST', body: { path: data.path, session: mode } }).then(function () {
+        toast('DSH 已启动：更新下游');
+        openDshProgress();
+      }).catch(showError);
+    };
+    const dsh = document.getElementById('btn-prop-dsh');
+    if (dsh) dsh.addEventListener('click', function () { run('current'); });
+    const fresh = document.getElementById('btn-prop-new');
+    if (fresh) fresh.addEventListener('click', function () { run('new'); });
+  }).catch(showError);
+}
+
+function unfreezeStage() {
+  if (!S.stage || S.stage.stage.id === undefined) return;
+  const id = S.stage.stage.id;
+  const typed = prompt('解除冻结是破坏性操作：当前阶段会回到草稿，文档重新可编辑。旧快照保留。\n\n输入阶段 ID（' + id + '）确认：');
+  if (typed === null) return;
+  api('/api/unfreeze', { method: 'POST', body: { stage: id, confirm: typed.trim() } }).then(function (result) {
+    toast('已解除冻结 · 旧快照 ' + (result.last_snapshot || '保留'));
+    boot();
+    location.hash = '#/stage/' + id;
+  }).catch(showError);
+}
+
+
+function dshElapsed(data) {
+  if (!data) return '';
+  if (data.running && data.elapsed_seconds !== undefined) return data.elapsed_seconds + ' 秒';
+  if (data.seconds !== undefined) return data.seconds + ' 秒';
+  return '';
+}
+
+function renderDshProgress(data) {
+  const box = document.getElementById('dsh-progress-body');
+  if (!box) return false;
+  const running = !!data.running;
+  const status = running ? '运行中' : (data.ok === true ? '完成' : (data.ok === false ? '失败' : '空闲'));
+  const session = data.session || '—';
+  const command = data.command ? data.command.join(' ') : '—';
+  box.innerHTML = '<div class="dsh-progress">' +
+    '<div class="dsh-status-line"><span class="pill ' + (running ? 'warn' : (data.ok === false ? 'danger' : 'ok')) + '">' + esc(status) + '</span>' +
+    '<span class="tag">会话：' + esc(session) + '</span><span class="tag">耗时：' + esc(dshElapsed(data)) + '</span>' +
+    (data.fallback ? '<span class="tag">当前会话不兼容，已自动换新会话</span>' : '') + '</div>' +
+    '<div class="kv"><span>交接包</span><b>' + esc(data.handoff || '—') + '</b><span>开始</span><b>' + esc(data.started || '—') + '</b><span>结束</span><b>' + esc(data.finished || '—') + '</b></div>' +
+    '<div class="dsh-cmd"><b>命令</b><code>' + esc(command) + '</code></div>' +
+    '<div class="dsh-log-head">工作日志 <span class="tag">dsh-agent.log · 最后 80 行</span></div>' +
+    '<pre class="log-tail">' + esc(data.log_tail || '暂无输出；DSH 正在启动或等待模型。') + '</pre>' +
+    '<div class="btn-row"><button class="btn" id="btn-dsh-refresh">刷新</button>' +
+    (data.log_tail ? '<button class="btn" id="btn-dsh-copy-log">复制日志</button>' : '') + '</div></div>';
+  const refresh = document.getElementById('btn-dsh-refresh');
+  if (refresh) refresh.addEventListener('click', refreshDshProgress);
+  const copy = document.getElementById('btn-dsh-copy-log');
+  if (copy) copy.addEventListener('click', function () {
+    if (navigator.clipboard) navigator.clipboard.writeText(data.log_tail || '').then(function () { toast('日志已复制'); });
+  });
+  return running;
+}
+
+function refreshDshProgress() {
+  if (!document.getElementById('dsh-progress-body')) { if (S.dshTimer) { clearInterval(S.dshTimer); S.dshTimer = null; } return; }
+  api('/api/handoff/status').then(function (data) {
+    const running = renderDshProgress(data);
+    if (!running && S.dshTimer) { clearInterval(S.dshTimer); S.dshTimer = null; }
+  }).catch(function (err) {
+    const box = document.getElementById('dsh-progress-body');
+    if (box) box.innerHTML = '<div class="empty">读取失败：' + esc(err.message) + '</div>';
+  });
+}
+
+function openDshProgress() {
+  openModal('DSH 工作进度', '<div id="dsh-progress-body"><div class="empty">读取中…</div></div>');
+  if (S.dshTimer) clearInterval(S.dshTimer);
+  S.dshTimer = setInterval(refreshDshProgress, 2500);
+  refreshDshProgress();
+}
+
 function runDshHandoff(handoff, sessionMode) {
   const status = document.getElementById('dsh-status');
   const mode = sessionMode || 'current';
@@ -1172,6 +1278,7 @@ function runDshHandoff(handoff, sessionMode) {
   api('/api/handoff/run', { method: 'POST', body: { path: handoff.path, session: mode } }).then(function (result) {
     if (status) status.textContent = 'DSH 已启动，会话：' + (result.session || 'current') + '（见 GUI）';
     toast('DSH agent 已启动');
+    openDshProgress();
   }).catch(function (err) {
     if (status) status.textContent = '启动失败：' + err.message;
     showError(err);
@@ -1241,7 +1348,7 @@ function renderInbox() {
     renderShell();
     const main = document.getElementById('main');
     const subs = state.submissions || [];
-    main.innerHTML = '<div class="page-head"><div><h2>交接收件箱</h2><p>agent 的交付单在这里等你验收；通过后阶段进入待冻结。</p></div></div>' +
+    main.innerHTML = '<div class="page-head"><div><h2>交接收件箱</h2><p>agent 的交付单在这里等你验收；通过后阶段进入待冻结。收件箱是可选流程，不影响你直接编辑文档。</p></div></div>' +
       '<div class="list">' + (subs.length ? subs.map(function (sub) {
         return '<div class="list-item"><h4>' + esc(sub.title) + ' <span class="tag">' + esc(sub.stage + ' · ' + sub.status) + '</span></h4>' +
           '<p>' + esc(sub.note || '') + '</p>' +
@@ -1269,7 +1376,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.7.6', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.8.0', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';
@@ -1363,6 +1470,75 @@ function createProject() {
   }).catch(showError);
 }
 
+
+/* ---------------- Start / project chooser ---------------- */
+
+function renderProjectStart() {
+  Promise.all([api('/api/projects').catch(function () { return { recent: [] }; }), api('/api/state').catch(function () { return {}; })]).then(function (result) {
+    const projects = result[0] || {};
+    const state = result[1] || {};
+    const recent = (projects.recent || []).filter(Boolean);
+    app.innerHTML = '<header class="topbar start-topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>Game Studio OS</h1><div class="sub">本地游戏工作室 · 一个人也能走完 8 条管线</div></div></div><div class="top-actions">' + pill('v0.8.0', '') + '</div></header>' +
+      '<main class="main start-main"><section class="start-hero"><div><p class="tag">开始</p><h2>先决定在哪工作</h2><p>打开一个已有工程，或新建一个。控制台不会自动打开上次的测试工程。</p></div></section>' +
+      '<div class="start-grid">' +
+      '<section class="card start-card"><div class="start-icon">▤</div><h3>打开项目文件夹</h3><p>选择已有工程根目录；控制台会读取 docs/、.gameconsole/ 与阶段状态。</p>' +
+      '<div class="field"><label>项目路径</label><div class="path-row"><input id="open-path" placeholder="D:\\Games\\MyGame"><button class="btn" id="open-browse">浏览</button></div></div>' +
+      '<div id="open-browser" class="browser-wrap"></div>' +
+      '<div class="btn-row"><button class="btn primary" id="open-project">打开项目</button></div>' +
+      (recent.length ? '<div class="recent"><h4>最近打开</h4>' + recent.map(function (path) {
+        return '<button class="recent-item" data-open-path="' + esc(path) + '"><span>' + esc(path) + '</span><small>打开</small></button>';
+      }).join('') + '</div>' : '') +
+      '</section>' +
+      '<section class="card start-card"><div class="start-icon">＋</div><h3>新建项目</h3><p>从一句话想法开始，创建 P0 立项书、8 条管线目录和本地工程骨架。</p>' +
+      '<div class="start-note"><b>流程</b><span>想法 → 路径 → 创建 P0 → agent 展开</span></div>' +
+      '<div class="btn-row"><button class="btn primary" id="start-new">新建项目</button></div></section>' +
+      '</div><p class="start-foot">当前服务：' + esc(state.console_version || '') + ' · 本地单机，数据保存在项目目录。</p></main>';
+    document.getElementById('start-new').addEventListener('click', renderWizard);
+    document.getElementById('open-project').addEventListener('click', function () {
+      openProject(document.getElementById('open-path').value.trim());
+    });
+    document.getElementById('open-browse').addEventListener('click', function () {
+      loadLandingBrowser(document.getElementById('open-path').value.trim() || '');
+    });
+    document.querySelectorAll('[data-open-path]').forEach(function (button) {
+      button.addEventListener('click', function () { openProject(button.getAttribute('data-open-path')); });
+    });
+  }).catch(showError);
+}
+
+function openProject(path) {
+  if (!path) { toast('先选择项目文件夹', true); return; }
+  toast('正在打开项目…');
+  api('/api/project/open', { method: 'POST', body: { path: path } }).then(function (state) {
+    S.state = state;
+    toast('已打开：' + (state.project ? state.project.name : path));
+    location.hash = '#/stage/' + state.current_stage;
+    boot();
+  }).catch(showError);
+}
+
+function loadLandingBrowser(path) {
+  const box = document.getElementById('open-browser');
+  if (!box) return;
+  box.innerHTML = '<div class="empty">读取目录…</div>';
+  api('/api/fs?path=' + encodeURIComponent(path)).then(function (data) {
+    let html = '<div class="browser"><div class="row"><button data-dir="' + esc(data.parent || '') + '">← 上级</button><span class="tag">' + esc(data.path || '') + '</span></div>';
+    (data.dirs || []).forEach(function (dir) {
+      html += '<div class="row"><button data-dir="' + esc(dir.path) + '">▸ ' + esc(dir.name) + '</button><span class="tag">' + esc(dir.path) + '</span></div>';
+    });
+    html += '</div>';
+    box.innerHTML = html;
+    box.querySelectorAll('[data-dir]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const dir = button.getAttribute('data-dir');
+        const input = document.getElementById('open-path');
+        if (dir && input) input.value = dir;
+        if (dir) loadLandingBrowser(dir);
+      });
+    });
+  }).catch(function (error) { box.innerHTML = '<div class="empty">' + esc(error.message) + '</div>'; });
+}
+
 /* ---------------- Router / boot ---------------- */
 
 function boot() {
@@ -1370,7 +1546,7 @@ function boot() {
     const state = result[0];
     S.time = result[1];
     S.state = state;
-    if (state.needs_project) { renderWizard(); return; }
+    if (state.needs_project) { renderProjectStart(); return; }
     if (!S.updateChecked) { S.updateChecked = true; setTimeout(autoCheckUpdate, 1800); }
     S.stage = null;
     S.artifact = null;
@@ -1381,7 +1557,7 @@ function boot() {
 }
 
 function route() {
-  if (!S.state || S.state.needs_project) { renderWizard(); return; }
+  if (!S.state || S.state.needs_project) { renderProjectStart(); return; }
   const hash = location.hash || '#/stage/' + S.state.current_stage;
   if (hash === '#/inbox') { if (!confirmLeave()) return; renderInbox(); return; }
   if (hash === '#/new') { if (!confirmLeave()) return; renderWizard(); return; }
