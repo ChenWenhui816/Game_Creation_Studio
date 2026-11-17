@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-17
+
+### Added
+
+- DeepSeek Harness 对接：dsh_bridge.py + studio-headless profile，复用 DSH 账号凭据。
+- 控制台「让 DSH 继续」按钮；POST /api/handoff/run、GET /api/handoff/status。
+- 当前会话（DSH_SESSION_ID）或新会话运行交接包。
+- docs/DeepSeekHarness对接.md、docs/创作流程.md。
+- P1 GDD/美术/技术文档由当前 agent 展开，gate spec 23 通过 / 0 失败。
+
 ## [0.7.2] - 2026-11-17
 
 ### Fixed

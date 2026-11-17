@@ -29,7 +29,7 @@ for name in ("SKILL.md", "SKILL.en.md", "README.md", "README.en.md", "AGENTS.md"
     if path.is_file():
         datas.append((str(path), "."))
 
-hiddenimports = ["gameconsole", "version", "agent_bridge"]
+hiddenimports = ["gameconsole", "version", "agent_bridge", "dsh_bridge"]
 binaries = []
 try:
     wv_datas, wv_binaries, wv_hidden = collect_all("webview")

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.2）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.3）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的 8 条管线、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.7.2"
+CONSOLE_VERSION = _version.VERSION if _version else "0.7.3"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -1202,6 +1202,55 @@ class Project:
         return list(reversed(items))
 
 
+
+_DSH_RUN = {"running": False, "started": None, "finished": None}
+
+
+def _start_dsh_handoff(project, handoff_path, session_id=""):
+    import dsh_bridge
+    path = project.root / handoff_path if handoff_path else None
+    if path is None or not path.is_file():
+        latest = project.state.get("handoff", {}).get("path")
+        if latest:
+            path = project.root / latest
+    if path is None or not path.is_file():
+        raise ConsoleError("没有交接包，请先冻结/生成交接包", 404)
+    prompt = read_text(path)
+    requested = (session_id or "").strip()
+    if requested in ("", "current"):
+        session = os.environ.get("DSH_SESSION_ID", "")
+    elif requested == "new":
+        session = ""
+    else:
+        session = requested
+    try:
+        command = dsh_bridge.build_command(project.root, session)
+    except Exception as exc:  # noqa: BLE001
+        raise ConsoleError("DSH 不可用：%s" % exc, 400)
+    log_path = project.console / "dsh-agent.log"
+    _DSH_RUN.update({"running": True, "started": now_iso(), "finished": None,
+                     "session": session or "new", "handoff": rel_posix(path, project.root),
+                     "command": command})
+    with log_path.open("a", encoding="utf-8") as handle:
+        handle.write("\n=== %s START ===\n%s\n\n" % (now_iso(), prompt))
+
+    def worker():
+        try:
+            result = dsh_bridge.run(prompt, project.root, session, timeout=1800)
+            with log_path.open("a", encoding="utf-8") as handle:
+                handle.write("\n=== %s DONE ===\n%s\nSTDERR:\n%s\n" % (
+                    now_iso(), result.get("stdout", ""), result.get("stderr", "")))
+            _DSH_RUN.update({"running": False, "finished": now_iso(), "ok": result.get("ok"),
+                             "exit": result.get("exit"), "seconds": result.get("seconds")})
+        except Exception as exc:  # noqa: BLE001
+            with log_path.open("a", encoding="utf-8") as handle:
+                handle.write("\n=== %s ERROR ===\n%s\n" % (now_iso(), exc))
+            _DSH_RUN.update({"running": False, "finished": now_iso(), "ok": False, "error": str(exc)})
+
+    threading.Thread(target=worker, daemon=True).start()
+    return {"started": True, "session": session or "new", "handoff": rel_posix(path, project.root),
+            "log": rel_posix(log_path, project.root)}
+
 class ConsoleServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
@@ -1334,6 +1383,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._ok(self._project().stage_detail(query.get("id", ["P0"])[0]))
             elif path == "/api/handoff":
                 self._ok(self._project().ensure_handoff(query.get("stage", ["P0"])[0]))
+            elif path == "/api/handoff/status":
+                self._ok(dict(_DSH_RUN))
             elif path == "/api/config":
                 self._project()
                 self._ok({"root": str(self.server.project.root),
@@ -1386,6 +1437,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/freeze":
                 project = self._project()
                 self._ok(project.freeze(payload.get("stage", "")))
+            elif path == "/api/handoff/run":
+                project = self._project()
+                self._ok(_start_dsh_handoff(project, payload.get("path", ""),
+                                            payload.get("session", "")))
+            elif path == "/api/handoff/status":
+                self._ok(dict(_DSH_RUN))
             elif path == "/api/next":
                 project = self._project()
                 self._ok(project.next_stage_action(payload.get("stage", "")))

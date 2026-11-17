@@ -958,6 +958,18 @@ function freezeStage() {
 }
 
 
+
+function runDshHandoff(handoff) {
+  const status = document.getElementById('dsh-status');
+  if (status) status.textContent = '正在启动 DSH…';
+  api('/api/handoff/run', { method: 'POST', body: { path: handoff.path, session: 'current' } }).then(function (result) {
+    if (status) status.textContent = 'DSH 已启动，会话：' + (result.session || 'current') + '（见 GUI）';
+    toast('DSH agent 已启动');
+  }).catch(function (err) {
+    if (status) status.textContent = '启动失败：' + err.message;
+    showError(err);
+  });
+}
 function requestHandoff() {
   if (!S.stage) return;
   toast('正在生成交接包…');
@@ -973,8 +985,10 @@ function showHandoff(handoff) {
     seeded +
     '<p>把下面内容交给当前 agent；如果已启动 agent_bridge，它会自动读取交接文件。</p>' +
     '<textarea id="handoff-prompt" class="handoff-prompt" readonly></textarea>' +
-    '<div class="btn-row"><button class="btn primary" id="btn-copy-handoff">复制给 Agent</button>' +
+    '<div class="btn-row"><button class="btn primary" id="btn-dsh-handoff">让 DSH 继续</button>' +
+    '<button class="btn" id="btn-copy-handoff">复制给 Agent</button>' +
     '<button class="btn" id="btn-close-handoff">关闭</button></div>' +
+    '<p class="tag" id="dsh-status">DSH 会使用当前会话；需要修改可先复制。</p>' +
     '<p class="tag">agent_bridge：python scripts/agent_bridge.py watch --project . --command "..."</p>');
   const area = document.getElementById('handoff-prompt');
   if (area) area.value = handoff.prompt || '';
@@ -985,6 +999,8 @@ function showHandoff(handoff) {
       navigator.clipboard.writeText(text).then(function () { toast('已复制交接包'); }).catch(function () { area.select(); });
     } else if (area) { area.select(); document.execCommand('copy'); toast('已复制交接包'); }
   });
+  const run = document.getElementById('btn-dsh-handoff');
+  if (run) run.addEventListener('click', function () { runDshHandoff(handoff); });
   const close = document.getElementById('btn-close-handoff');
   if (close) close.addEventListener('click', closeModal);
 }
@@ -1043,7 +1059,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.7.2', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.7.3', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';

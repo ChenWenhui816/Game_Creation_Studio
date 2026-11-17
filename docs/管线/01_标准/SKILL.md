@@ -6,7 +6,7 @@ inputs: 立项书 | 参考作品 | UE 5.8 目标平台
 outputs: docs/01_游戏设计文档.md | docs/02_美术圣经.md | docs/03_技术方案.md | docs/05_资产清单.csv | docs/06_数值表.csv
 gates: G1 标准可判定
 owner: studio
-version: 0.7.2
+version: 0.7.3
 ---
 
 # 01 · 标准 · Agent Contract

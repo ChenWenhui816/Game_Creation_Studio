@@ -6,7 +6,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.7.2-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.3-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -32,6 +32,13 @@
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.7.3 新增：DeepSeek Harness 对接
+
+- 冻结交接包可直接交给 DSH；复用已登录 DSH 账号，不需要 API key；
+- 控制台「让 DSH 继续」按钮：当前会话或新会话；
+- 当前 agent 已按 P0 交接包展开 P1 GDD/美术/技术，G1 23/0/0；
+- 创作流程：用户只提想法/砍方向/审核，agent 发散 P0-P3。
 
 ## v0.7.2 修复：冻结交接与填写引导
 
@@ -61,6 +68,7 @@
 | 参考库吸收 | Donchitos/gamedev/agency/Superpowers 能力映射到角色/路由/闸门 |
 | 工作室运行 | 6 角色 + 8 管线矩阵、冲刺/里程碑模板 |
 | 冻结交接 | 冻结自动写交接包 + P0→P1 文档播种；agent_bridge 可自动派发 |
+| DSH 对接 | 「让 DSH 继续」复用已登录账号，当前/新会话推进 |
 | 填写引导 | 黄色【待填】高亮、固定章节灰锁、填写区面板 |
 
 ## v0.6.0 新增：diff、证据上传、拖拽、总览与计时
@@ -199,7 +207,7 @@ python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
-> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.7.2`）。
+> 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.7.3`）。
 
 ## 命令速查
 
@@ -269,6 +277,8 @@ Personal_Game_Studio_UE/
 │  ├─ 参考库与能力映射.md    # 高星 skill 吸收/未采用对照
 │  ├─ 工作室流程目录.md      # 8 管线 × 6 角色 × 冲刺/里程碑
 │  ├─ 交接与Agent桥.md       # 冻结交接包 / agent_bridge
+│  ├─ DeepSeekHarness对接.md # DSH headless / 当前会话
+│  ├─ 创作流程.md            # 想法 → P0 → P1 → P3
 │  ├─ 资产卡规范.md          # 资产卡字段、AI 来源与状态机
 │  ├─ ADR/0001-UE-MCP.md     # UE MCP 选型
 │  ├─ 安装包与签名.md        # 安装包与 SmartScreen
@@ -289,7 +299,7 @@ Personal_Game_Studio_UE/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.7.2`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.7.3`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

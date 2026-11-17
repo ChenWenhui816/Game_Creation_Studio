@@ -8,6 +8,7 @@ description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控�
 > 工作室 CLI：`python scripts/studio.py doctor|explain|next|route`（说明见 `docs/管线/README.md`）
 > 角色：`agents/README.md` ｜ 路由：`router/SKILL.md` ｜ 参考来源：`docs/参考库与能力映射.md` ｜ 运行手册：`docs/工作室流程目录.md`
 > 冻结交接：`docs/交接与Agent桥.md` ｜ agent watcher：`scripts/agent_bridge.py`
+> DSH：`docs/DeepSeekHarness对接.md` ｜ 创作流程：`docs/创作流程.md` ｜ bridge：`scripts/dsh_bridge.py`
 > MCP 工具总线：`python scripts/mcp_gateway.py`（说明见 `mcp/README.md`）
 ---
 

@@ -6,7 +6,7 @@ inputs: 白模 | 资产库 | 剧本/任务 | 音频
 outputs: 全部关卡 | 敌人/Boss/收集 | 剧情/任务/UI | 周报与验收单
 gates: G6 全流程通关
 owner: studio
-version: 0.7.2
+version: 0.7.3
 ---
 
 # 06 · 内容生产 · Agent Contract
