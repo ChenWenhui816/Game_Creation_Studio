@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-11-17
+
+### Changed
+
+- 采用 nextlevelbuilder/ui-ux-pro-max-skill（150.6k stars, MIT）生成并落地新设计系统；
+- 深色玻璃卡片、绿色主 CTA、Fira 字体栈、统一 focus-visible、reduced-motion；
+- 1280/900 两档响应式；新增 docs/UIUX设计系统.md 与参考映射。
+
 ## [0.7.5] - 2026-11-17
 
 ### Added

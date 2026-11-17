@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.7.5-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.7.6-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -30,6 +30,12 @@ The most dangerous failure for a solo developer plus an AI agent is not "cannot 
 |The agent reports "done" every week, but the build is not what you asked for|Delivery note (交付单) + evidence + weekly screenshot tour|
 |Scope keeps growing, so the game never ships|Cut list + capacity accounting + monthly retrospective|
 |Store page and ratings are considered only at the end|Store page starts 6 months early; G5 release checklist|
+
+## What's new in v0.7.6
+
+- Adopted UI UX Pro Max (150.6k stars, MIT) for the console design system.
+- Dark glass cards, green primary CTA, Fira type stack, focus-visible, reduced motion.
+- Responsive at 1280/900; decisions recorded in docs/UIUX设计系统.md.
 
 ## What's new in v0.7.5
 
@@ -207,7 +213,7 @@ Hand the project directory to your agent and say one sentence:
 |**Codex / Cursor / Gemini CLI**|Put `AGENTS.md` at the project root and tell the agent to route through `SKILL.md`|
 |**Any agent**|It only needs to read Markdown and run commands; the skill is the shell, `scripts/gamecheck.py` is the body|
 
-> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.7.5`).
+> Upgrading: `git pull` or download the new Release. To pin a version, check out the matching tag (`git checkout v0.7.6`).
 
 ## Command reference
 
@@ -282,7 +288,7 @@ Personal_Game_Studio_UE/
 
 ## Versioning
 
-- Versions follow [SemVer](https://semver.org/). The current version is `v0.7.5`; interfaces and file layout may still change.
+- Versions follow [SemVer](https://semver.org/). The current version is `v0.7.6`; interfaces and file layout may still change.
 - Change history lives in [CHANGELOG.md](CHANGELOG.md).
 - How the project is iterated, released and upgraded: see [docs/GitHub发布指南.md](docs/GitHub发布指南.md).
 - Console guide: [docs/控制台使用指南.md](docs/控制台使用指南.md).

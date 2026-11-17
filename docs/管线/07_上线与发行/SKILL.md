@@ -6,7 +6,7 @@ inputs: 完整游戏 | 商店素材 | 本地化 | 构建/认证
 outputs: Win/Steam 构建 | 主机认证构建 | 商店页/PV/截图 | 多语言 | 上线清单
 gates: G7 上线清单
 owner: studio
-version: 0.7.5
+version: 0.7.6
 ---
 
 # 07 · 上线与发行 · Agent Contract
