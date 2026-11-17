@@ -318,6 +318,7 @@ Personal_Game_Studio_UE/
 │  ├─ UIUX设计系统.md        # 高星 UIUX skill 的落地
 │  ├─ 代码签名指南.md        # Windows 安装包签名
 │  ├─ SignPath免费签名申请.md # 免费公共可信签名
+│  └─ ../CODE_SIGNING.md       # SignPath 要求的签名政策
 │  ├─ 资产卡规范.md          # 资产卡字段、AI 来源与状态机
 │  ├─ ADR/0001-UE-MCP.md     # UE MCP 选型
 │  ├─ 安装包与签名.md        # 安装包与 SmartScreen

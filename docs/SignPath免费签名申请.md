@@ -15,6 +15,10 @@
 
 ## 2. 申请时可直接填写
 
+Code signing policy URL（可直接填）：
+https://github.com/ChenWenhui816/Personal_Game_Studio_UE/blob/main/CODE_SIGNING.md
+
+
 | 字段 | 建议填写 |
 |---|---|
 | Project / repository | https://github.com/ChenWenhui816/Personal_Game_Studio_UE |
