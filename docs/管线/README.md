@@ -8,8 +8,8 @@
 | 00 | 立项 | Concept & Scope | G0 立项书可复述 |
 | 01 | 标准 | Standards & Docs | G1 标准可判定 |
 | 02 | 剧本与叙事 | Script & Narrative | G2 剧本可拍 |
-| 03 | 白模与技术 | Whitebox & Tech | G3 白模可玩 |
-| 04 | 美术与视频 | Art & Video | G4 风格与管线锁定 |
+| 03 | 概念与美术 | Concept & Art | G3 概念与美术锁定 |
+| 04 | 测试与技术 | Test & Tech | G4 白模/测试可玩 |
 | 05 | 音乐与音频 | Music & Audio | G5 音频可集成 |
 | 06 | 内容生产 | Content Production | G6 全流程通关 |
 | 07 | 上线与发行 | Release & Publishing | G7 上线清单 |

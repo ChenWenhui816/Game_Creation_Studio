@@ -41,12 +41,12 @@ If the user only says "I want to make a game" and there is no project yet, start
 |P0 Concept|`docs/管线/00_立项/README.md`|`studio explain 00`|No concept doc|
 |P1 Standards|`docs/管线/01_标准/README.md`|`gate spec`|G1 not passed|
 |P2 Script|`docs/管线/02_剧本/README.md`|`gate script`|SC/SH/LINE ids incomplete|
-|P3 Whitebox & tech|`docs/管线/03_白模与技术/README.md`|`gate whitebox`|Cannot run/jump or blind test failed|
-|P4 Art & video|`docs/管线/04_美术与视频/README.md`|`gate art`|Manifest/PV doc not passed|
+|P3 Whitebox & tech|`docs/管线/03_概念与美术/README.md`|`gate whitebox`|Cannot run/jump or blind test failed|
+|P4 Art & video|`docs/管线/04_测试与技术/README.md`|`gate art`|Manifest/PV doc not passed|
 |P5 Music & audio|`docs/管线/05_音乐与音频/README.md`|`gate audio`|MUS/SFX/VO or integration missing|
-|P6 Content|`docs/管线/06_内容生产/README.md`|`gate content`|No full playthrough|
+|P6 Content|`docs/管线/06_内容生产与视频/README.md`|`gate content`|No full playthrough|
 |P7 Release|`docs/管线/07_上线与发行/README.md`|`gate release`|Release/store checklist not green|
-|Assets / daily screenshots|`docs/管线/04_美术与视频/README.md`|`asset_registry.py scan` / `daily_gallery.py`|Manual import or guessing|
+|Assets / daily screenshots|`docs/管线/04_测试与技术/README.md`|`asset_registry.py scan` / `daily_gallery.py`|Manual import or guessing|
 |MCP / tool adoption|`mcp/README.md`|`mcp_gateway.py doctor`|No health/permissions|
 |First time / explaining the workflow|`references/00-总览与协作.md`|—|—|
 

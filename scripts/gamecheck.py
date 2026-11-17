@@ -1342,6 +1342,15 @@ def cmd_gate(args, root: Path) -> int:
         _track(report, tips, "已入库数量",
                lambda: check_content_stock(root, report, level_count.get("count"), override),
                "把通过验收的资产 status 改为 已入库，或按关卡数补足；默认下限 24 条")
+        def check_pv():
+            pv = root / DOCS_DIR / "17_视频PV制作单.md"
+            if not pv.is_file():
+                report.fail("%s/17_视频PV制作单.md 缺失" % DOCS_DIR, hint="复制 templates/17_视频PV制作单.md 并填写")
+            else:
+                check_md_document(report, pv, "17_视频PV制作单.md", "%s/17_视频PV制作单.md" % DOCS_DIR)
+
+        _track(report, tips, "PV/视频制作单", check_pv,
+               "游戏测试完后再做 PV；把镜头/资产/音乐/输出规格写进 17_视频PV制作单.md")
         _track(report, tips, "变更单联动",
                lambda: check_changes(root, report),
                "每张变更单写 CO- 编号与影响资产；清单 source/note 引用的编号必须存在")
@@ -1448,16 +1457,16 @@ def cmd_gate(args, root: Path) -> int:
         if report.failed:
             report.warn("G2 剧本闸门只证明“可拍/可配音/可交付美术”；好不好看由人评审")
     elif gate == "art":
-        report.ok("闸门 art：美术与视频（P4）——PV 制作单 + 资产清单逐行校验")
-        path = root / DOCS_DIR / "17_视频PV制作单.md"
+        report.ok("闸门 art：概念与美术（P3）——美术圣经 + 资产清单逐行校验")
+        path = root / DOCS_DIR / "02_美术圣经.md"
         if not path.is_file():
-            report.fail("%s/17_视频PV制作单.md 缺失" % DOCS_DIR, hint="复制 templates/17_视频PV制作单.md 并填写")
+            report.fail("%s/02_美术圣经.md 缺失" % DOCS_DIR, hint="复制 templates/02_美术圣经.md 并填写")
         else:
-            check_md_document(report, path, "17_视频PV制作单.md", "%s/17_视频PV制作单.md" % DOCS_DIR)
+            check_md_document(report, path, "02_美术圣经.md", "%s/02_美术圣经.md" % DOCS_DIR)
         _track(report, tips, "资产清单", lambda: check_manifest(root, report),
                "按行修正资产清单，并登记 assets/ 下所有文件")
         if report.failed:
-            report.warn("G4 只验证美术/视频交接和资产清单；风格由 D2/D3 人审")
+            report.warn("G3 只验证概念/美术和资产清单；风格由 D2/D3 人审")
     elif gate == "audio":
         report.ok("闸门 audio：音乐与音频（P5）——音乐/音效/配音/混音/引擎集成")
         path = root / DOCS_DIR / "16_音乐音频设计.md"
@@ -1935,7 +1944,7 @@ def build_parser():
         "spec": "G1 规格锁定：文档阶段 1 + 数值 + 表头 + 标准书表格",
         "script": "G2 剧本可拍：剧本圣经 + 分镜镜头表 + 场景/台词/镜头 ID",
         "whitebox": "G3 白模可玩：文档阶段 2 + 数值 + 盲测证据",
-        "art": "G4 美术与视频：PV 制作单 + 资产清单逐行校验",
+        "art": "G3 概念与美术：美术圣经 + 资产清单逐行校验",
         "audio": "G5 音乐音频：音乐/音效/配音/混音/引擎集成",
         "assets": "旧 G3 资产管线：文档阶段 1 + 资产清单逐行校验",
         "slice": "旧 G3 垂直切片：文档阶段 3 + 验收通过 + 已入库 ≥10",

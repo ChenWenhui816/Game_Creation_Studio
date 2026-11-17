@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.8.0）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.9.0）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的 8 条管线、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.8.0"
+CONSOLE_VERSION = _version.VERSION if _version else "0.9.0"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -112,8 +112,7 @@ STAGES = [
     },
     {
         "id": "P1", "name": "标准与文档", "folder": "01_标准",
-        "docs": ["docs/01_游戏设计文档.md", "docs/02_美术圣经.md",
-                 "docs/03_技术方案.md", "docs/05_资产清单.csv", "docs/06_数值表.csv"],
+        "docs": ["docs/01_游戏设计文档.md", "docs/03_技术方案.md", "docs/06_数值表.csv"],
         "gate": ["gate", "spec"],
         "gate_label": "G1 标准可判定",
         "desc": "GDD / 美术圣经 / 技术方案 / 资产清单 / 数值表冻结。",
@@ -126,18 +125,18 @@ STAGES = [
         "desc": "故事、角色、场景、台词、镜头与下游交接能直接开工。",
     },
     {
-        "id": "P3", "name": "白模与技术", "folder": "03_白模与技术",
-        "docs": ["docs/04_关卡设计", "docs/10_测试记录.md"],
-        "gate": ["gate", "whitebox"],
-        "gate_label": "G3 白模可玩",
-        "desc": "UE 5.8 工程能跑、角色能跑跳、1 关灰盒可玩。",
+        "id": "P3", "name": "概念与美术", "folder": "03_概念与美术",
+        "docs": ["docs/02_美术圣经.md", "docs/05_资产清单.csv"],
+        "gate": ["gate", "art"],
+        "gate_label": "G3 概念与美术锁定",
+        "desc": "先定概念/风格/色板/资产清单，再进白模与测试。",
     },
     {
-        "id": "P4", "name": "美术与视频", "folder": "04_美术与视频",
-        "docs": ["docs/07_交付单", "docs/08_验收单", "docs/17_视频PV制作单.md"],
-        "gate": ["gate", "art"],
-        "gate_label": "G4 风格与管线锁定",
-        "desc": "资产工厂、风格锚点、分镜/PV 与 UE 导入验证。",
+        "id": "P4", "name": "测试与技术", "folder": "04_测试与技术",
+        "docs": ["docs/03_技术方案.md", "docs/04_关卡设计", "docs/10_测试记录.md"],
+        "gate": ["gate", "whitebox"],
+        "gate_label": "G4 白模/测试可玩",
+        "desc": "白模、技术验证、性能与测试记录；先证明能玩，再铺内容。",
     },
     {
         "id": "P5", "name": "音乐与音频", "folder": "05_音乐与音频",
@@ -147,11 +146,11 @@ STAGES = [
         "desc": "主题、stems、音效、配音、混音与 MetaSounds/Wwise 集成。",
     },
     {
-        "id": "P6", "name": "内容生产", "folder": "06_内容生产",
-        "docs": ["docs/04_关卡设计", "docs/11_周报"],
+        "id": "P6", "name": "内容生产与视频", "folder": "06_内容生产与视频与视频",
+        "docs": ["docs/11_周报", "docs/17_视频PV制作单.md"],
         "gate": ["gate", "content"],
-        "gate_label": "G6 全流程通关",
-        "desc": "全部关卡、敌人、剧情与收集内容。",
+        "gate_label": "G6 全流程通关 + PV",
+        "desc": "全部关卡、敌人、剧情与收集；测试完再做 PV/视频。",
     },
     {
         "id": "P7", "name": "上线与发行", "folder": "07_上线与发行",
@@ -166,17 +165,17 @@ STAGE_IDS = [item["id"] for item in STAGES]
 DOC_STAGE = {
     "docs/00_立项书.md": "P0",
     "docs/01_游戏设计文档.md": "P1",
-    "docs/02_美术圣经.md": "P1",
+    "docs/02_美术圣经.md": "P3",
     "docs/03_技术方案.md": "P1",
-    "docs/05_资产清单.csv": "P1",
+    "docs/05_资产清单.csv": "P3",
     "docs/06_数值表.csv": "P1",
     "docs/14_剧本圣经.md": "P2",
     "docs/15_分镜与镜头表.md": "P2",
-    "docs/04_关卡设计": "P3",
-    "docs/10_测试记录.md": "P3",
+    "docs/04_关卡设计": "P4",
+    "docs/10_测试记录.md": "P4",
     "docs/07_交付单": "P4",
     "docs/08_验收单": "P4",
-    "docs/17_视频PV制作单.md": "P4",
+    "docs/17_视频PV制作单.md": "P6",
     "docs/16_音乐音频设计.md": "P5",
     "docs/11_周报": "P6",
     "docs/12_Demo上线清单.md": "P7",
@@ -246,9 +245,9 @@ DOWNSTREAM_DOCS = {
     "docs/02_美术圣经.md": ["docs/05_资产清单.csv", "docs/17_视频PV制作单.md"],
     "docs/03_技术方案.md": ["docs/04_关卡设计", "docs/10_测试记录.md"],
     "docs/06_数值表.csv": ["docs/03_技术方案.md", "docs/10_测试记录.md"],
-    "docs/14_剧本圣经.md": ["docs/04_美术与视频/README.md", "docs/16_音乐音频设计.md"],
+    "docs/14_剧本圣经.md": ["docs/04_测试与技术/README.md", "docs/16_音乐音频设计.md"],
     "docs/15_分镜与镜头表.md": ["docs/17_视频PV制作单.md", "docs/16_音乐音频设计.md"],
-    "docs/16_音乐音频设计.md": ["docs/04_美术与视频/README.md"],
+    "docs/16_音乐音频设计.md": ["docs/04_测试与技术/README.md"],
 }
 
 class Project:
@@ -1096,6 +1095,32 @@ class Project:
         return {"source": source_rel, "targets": targets,
                 "path": rel_posix(path, self.root), "prompt": prompt}
 
+
+    def rewrite_prompt(self, rel: str) -> dict:
+        rel = rel.replace(chr(92), "/").lstrip("/")
+        path = self.root / rel
+        if not path.is_file():
+            raise ConsoleError("文档不存在：%s" % rel, 404)
+        if path.suffix.lower() not in (".md", ".csv"):
+            raise ConsoleError("只支持 Markdown / CSV 文档", 400)
+        if self.is_locked(rel):
+            raise ConsoleError("文档已冻结；先解除冻结或走变更单", 409)
+        stage = self.stage_of_rel(rel) or self.state.get("current_stage", "P0")
+        meta = STAGE_BY_ID[stage]
+        content = read_text(path)
+        prompt = "你是游戏工作室的文档 agent。请直接把下面这份文档写完并写回文件，不要只给建议。\n\n" + \
+            "文件：%s\n阶段：%s %s\n闸门：python scripts/gamecheck.py %s\n\n" % (
+                rel, stage, meta["name"], " ".join(meta["gate"])) + \
+            "要求：\n1. 保留现有 H2 章节结构，不要删除用户已写内容；\n2. 清掉所有待填/示例占位，写成可判定内容；\n3. 与 P0 立项事实、已冻结范围一致；\n4. 改完直接写文件，跑闸门，交证据；\n5. 如果缺关键决策，最多列 3 条待决策，不要停住不动。\n\n" + \
+            "当前内容：\n---\n" + content[:24000] + "\n---\n"
+        folder = self.console / "rewrites"
+        folder.mkdir(parents=True, exist_ok=True)
+        out = folder / ("%s_%s.md" % (stamp(), path.stem))
+        out.write_text(prompt, encoding="utf-8")
+        self.audit("rewrite.create", rel, {"stage": stage, "path": rel_posix(out, self.root)})
+        return {"path": rel, "stage": stage, "prompt_path": rel_posix(out, self.root),
+                "prompt": prompt, "gate": " ".join(meta["gate"])}
+
     def unfreeze(self, stage_id: str, confirmation: str = "") -> dict:
         self.stage_def(stage_id)
         if self.stage_status(stage_id) != "frozen":
@@ -1183,6 +1208,34 @@ class Project:
         self.write_stage_readme(sub["stage"])
         return sub
 
+
+    def add_notification(self, title: str, body: str = "", stage: str = "", target: str = "", kind: str = "agent") -> dict:
+        item = {
+            "id": "N-" + secrets.token_hex(3).upper(),
+            "kind": kind,
+            "title": title,
+            "body": body,
+            "stage": stage,
+            "target": target,
+            "at": now_iso(),
+            "read": False,
+        }
+        self.state.setdefault("notifications", []).append(item)
+        self.audit("notification.create", item["id"], {"title": title, "stage": stage, "target": target})
+        self.save_state()
+        return item
+
+    def notifications(self):
+        return list(reversed(self.state.setdefault("notifications", [])))
+
+    def mark_notification_read(self, note_id: str) -> dict:
+        for item in self.state.setdefault("notifications", []):
+            if item.get("id") == note_id:
+                item["read"] = True
+                self.save_state()
+                return item
+        raise ConsoleError("通知不存在", 404)
+
     def summary(self) -> dict:
         stages = []
         for item in STAGES:
@@ -1218,6 +1271,7 @@ class Project:
             "current_stage": self.state.get("current_stage", "P0"),
             "stages": stages,
             "pending_submissions": len(pending),
+            "unread_notifications": len([n for n in self.state.get("notifications", []) if not n.get("read")]),
             "submissions": self.state.get("submissions", []),
             "changes": self.changes(),
             "pending_changes": len(pending_changes),
@@ -1277,7 +1331,7 @@ class Project:
 _DSH_RUN = {"running": False, "started": None, "finished": None}
 
 
-def _start_dsh_handoff(project, handoff_path, session_id=""):
+def _start_dsh_handoff(project, handoff_path, session_id="", target_stage="", title="", kind="agent"):
     import dsh_bridge
     path = project.root / handoff_path if handoff_path else None
     if path is None or not path.is_file():
@@ -1324,10 +1378,29 @@ def _start_dsh_handoff(project, handoff_path, session_id=""):
                     now_iso(), result.get("stdout", ""), result.get("stderr", "")))
             _DSH_RUN.update({"running": False, "finished": now_iso(), "ok": result.get("ok"),
                              "exit": result.get("exit"), "seconds": result.get("seconds")})
+            try:
+                target = target_stage or project.state.get("current_stage", "")
+                if result.get("ok"):
+                    note_title = title or ("Agent 已完成：%s" % (target or "当前项"))
+                    note_kind = kind
+                else:
+                    note_title = "Agent 未完成：%s" % (target or "当前项")
+                    note_kind = "agent_error"
+                project.add_notification(note_title,
+                    "阶段：%s" % (target or "当前项") + chr(10) + "日志：%s" % rel_posix(log_path, project.root),
+                    stage=target, target=target, kind=note_kind)
+            except Exception:
+                pass
         except Exception as exc:  # noqa: BLE001
             with log_path.open("a", encoding="utf-8") as handle:
                 handle.write("\n=== %s ERROR ===\n%s\n" % (now_iso(), exc))
             _DSH_RUN.update({"running": False, "finished": now_iso(), "ok": False, "error": str(exc)})
+            try:
+                target = target_stage or project.state.get("current_stage", "")
+                project.add_notification("Agent 失败：%s" % (target or "当前项"), str(exc),
+                                         stage=target, target=target, kind="agent_error")
+            except Exception:
+                pass
 
     threading.Thread(target=worker, daemon=True).start()
     return {"started": True, "session": session or "new", "handoff": rel_posix(path, project.root),
@@ -1486,6 +1559,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._ok({"items": self._project().changes()})
             elif path == "/api/evidence":
                 self._ok(self._project().evidence())
+            elif path == "/api/notifications":
+                self._ok({"items": self._project().notifications()})
             elif path == "/api/stage/diff":
                 self._ok(self._project().stage_diff(query.get("id", ["P0"])[0]))
             elif path == "/api/stage/insight":
@@ -1571,17 +1646,37 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/unfreeze":
                 project = self._project()
                 self._ok(project.unfreeze(payload.get("stage", ""), payload.get("confirm", "")))
+            elif path == "/api/rewrite":
+                project = self._project()
+                self._ok(project.rewrite_prompt(payload.get("path", "")))
+            elif path == "/api/rewrite/run":
+                project = self._project()
+                self._ok(_start_dsh_handoff(project, payload.get("path", ""),
+                                            payload.get("session", ""),
+                                            target_stage=project.state.get("current_stage", ""),
+                                            title="Agent 已写完当前文档",
+                                            kind="rewrite"))
+            elif path == "/api/notifications/read":
+                project = self._project()
+                self._ok(project.mark_notification_read(payload.get("id", "")))
             elif path == "/api/propagate":
                 project = self._project()
                 self._ok(project.propagate_prompt(payload.get("path", "")))
             elif path == "/api/propagate/run":
                 project = self._project()
                 self._ok(_start_dsh_handoff(project, payload.get("path", ""),
-                                            payload.get("session", "")))
+                                            payload.get("session", ""),
+                                            target_stage=project.state.get("current_stage", ""),
+                                            title="下游文档已更新",
+                                            kind="propagate"))
             elif path == "/api/handoff/run":
                 project = self._project()
+                target = project.next_stage(project.state.get("current_stage", "")) or ""
                 self._ok(_start_dsh_handoff(project, payload.get("path", ""),
-                                            payload.get("session", "")))
+                                            payload.get("session", ""),
+                                            target_stage=target,
+                                            title=("下一项已生成：%s" % target) if target else "Agent 已完成交接",
+                                            kind="handoff"))
             elif path == "/api/handoff/status":
                 self._ok(_dsh_status(self._project()))
             elif path == "/api/next":

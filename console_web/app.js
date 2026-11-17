@@ -17,6 +17,8 @@ const S = {
   updateChecked: false,
   fillOpen: true,
   liveEditable: false,
+  agentRunning: false,
+  agentTimer: null,
   time: null,
   clockTimer: null,
 };
@@ -404,11 +406,12 @@ function renderTopbar() {
     '<div class="sub">' + esc(project.path || '本地单机 · 零依赖') + '</div>' +
     '</div></div>' +
     '<div class="top-actions">' +
+    (S.agentRunning ? pill('Agent 运行中 · 后续锁定', 'warn') : '') +
     (currentStage ? pill('当前 ' + current + ' · ' + (STATUS_LABEL[currentStage.status] || ''), '') : '') +
     '<button class="btn" id="btn-dashboard">总览</button>' +
     '<span class="timer"><span id="time-clock">' + formatDuration(S.time ? (S.time.active ? S.time.active_elapsed + (S.time.total || 0) : S.time.total) : 0) + '</span>' +
     '<button class="btn tiny" id="btn-timer">' + (S.time && S.time.active ? '停止计时' : '开始计时') + '</button></span>' +
-    '<button class="btn" id="btn-inbox">收件箱' + (state && state.pending_submissions ? ' ' + state.pending_submissions : '') + '</button>' +
+    '<button class="btn" id="btn-inbox">收件箱' + (state && (state.pending_submissions + (state.unread_notifications || 0)) ? ' ' + (state.pending_submissions + (state.unread_notifications || 0)) : '') + '</button>' +
     '<button class="btn" id="btn-changes">变更单' + (state && state.pending_changes ? ' ' + state.pending_changes : '') + '</button>' +
     '<button class="btn" id="btn-evidence">证据墙</button>' +
     '<button class="btn" id="btn-new">新建项目</button>' +
@@ -419,11 +422,14 @@ function renderTopbar() {
 
 function renderSidebar() {
   let html = '<aside class="sidebar"><div class="stage-rail">';
-  S.state.stages.forEach(function (stage) {
+  const currentId = S.state ? S.state.current_stage : '';
+  const currentIndex = S.state ? S.state.stages.findIndex(function (s) { return s.id === currentId; }) : 0;
+  S.state.stages.forEach(function (stage, index) {
     const active = S.stage && S.stage.stage && S.stage.stage.id === stage.id;
-    html += '<button class="stage-item ' + (active ? 'active' : '') + '" data-stage="' + stage.id + '">' +
+    const locked = index > currentIndex;
+    html += '<button class="stage-item ' + (active ? 'active' : '') + (locked ? ' locked' : '') + '" data-stage="' + stage.id + '"' + (locked ? ' disabled title="先完成当前阶段并让 agent 写下一项"' : '') + '>' +
       '<span class="stage-dot ' + stage.status + '"></span><span class="meta"><strong>' + stage.id + ' ' + esc(stage.name) + '</strong>' +
-      '<span>' + STATUS_LABEL[stage.status] + ' · ' + esc(stage.gate_label) + '</span></span></button>';
+      '<span>' + (locked ? '等待当前项完成' : STATUS_LABEL[stage.status] + ' · ' + esc(stage.gate_label)) + '</span></span></button>';
   });
   html += '</div><div class="side-note">阶段文件夹：<br><b>stages/' + esc((S.stage && S.stage.folder) || '...') + '</b><br><br>文档仍在 docs/，这里是可本地阅读的版本与冻结快照。</div></aside>';
   return html;
@@ -433,6 +439,7 @@ function renderShell() {
   app.innerHTML = renderTopbar() + '<div class="layout">' + renderSidebar() + '<main class="main" id="main"></main></div>';
   document.querySelectorAll('[data-stage]').forEach(function (button) {
     button.addEventListener('click', function () {
+      if (button.disabled) { toast('先完成当前阶段；后续流程由 agent 生成后解锁', true); return; }
       if (!confirmLeave()) return;
       location.hash = '#/stage/' + button.getAttribute('data-stage');
     });
@@ -862,7 +869,7 @@ function renderStagePage() {
       return '<button class="doc-item" data-path="' + esc(doc.path) + '"><span class="dot ' + (doc.exists ? (doc.locked ? 'lock' : 'ok') : '') + '"></span><span class="path">' + esc(doc.path.replace('docs/', '')) + '</span></button>';
     }).join('') + '</div></section>' +
     '<section class="card editor-card" id="editor-card"><div class="editor-head"><div class="editor-title"><strong id="doc-title">选择左侧文档</strong><span id="doc-sub">保存后会生成版本副本</span></div>' +
-    '<div class="editor-tools"><button class="btn" id="btn-fields">填写区</button><button class="btn" id="btn-preview">预览</button><button class="btn" id="btn-propagate">传递下游</button><button class="btn primary" id="btn-save">保存</button></div></div>' +
+    '<div class="editor-tools"><button class="btn" id="btn-fields">填写区</button><button class="btn" id="btn-preview">预览</button><button class="btn" id="btn-rewrite">Agent 写完</button><button class="btn" id="btn-propagate">传递下游</button><button class="btn primary" id="btn-save">保存</button></div></div>' +
     '<div class="fill-panel" id="fill-panel" hidden></div>' +
     '<div class="editor-body" id="editor-body"><textarea id="editor" spellcheck="false" placeholder="选择左侧文档开始编辑…"></textarea><div class="preview" id="preview"></div></div></section>' +
     '<aside class="side-col">' +
@@ -896,8 +903,10 @@ function renderStagePage() {
   document.getElementById('btn-next').addEventListener('click', nextStage);
   document.getElementById('btn-preview').addEventListener('click', togglePreview);
   document.getElementById('btn-fields').addEventListener('click', toggleFillPanel);
+  document.getElementById('btn-rewrite').addEventListener('click', agentRewriteDoc);
   document.getElementById('btn-propagate').addEventListener('click', propagateDoc);
   bindPreviewEditing();
+  setTimeout(refreshAgentStatus, 600);
   document.getElementById('btn-add-section').addEventListener('click', addSection);
   document.getElementById('btn-add-check').addEventListener('click', addCheckItem);
   loadStageInsight(stage.stage.id);
@@ -1008,6 +1017,8 @@ function openArtifact(path) {
     if (saveBtn) saveBtn.disabled = editor.disabled;
     const propBtn = document.getElementById('btn-propagate');
     if (propBtn) propBtn.disabled = editor.disabled;
+    const rewriteBtn = document.getElementById('btn-rewrite');
+    if (rewriteBtn) rewriteBtn.disabled = editor.disabled;
     title.textContent = path.replace('docs/', '');
     sub.textContent = info.locked ? '已冻结 · 需变更单' : (info.exists ? '可编辑 · 保存会生成版本' : '尚未创建');
     S.liveEditable = /\.md$/i.test(path) && !info.locked;
@@ -1163,6 +1174,7 @@ function runGate() {
 
 function freezeStage() {
   if (!S.stage) return;
+  if (S.agentRunning) { toast('Agent 正在写当前项，完成后再冻结', true); return; }
   if (!confirm('冻结当前阶段？会运行闸门、生成快照并锁定文档。')) return;
   api('/api/freeze', { method: 'POST', body: { stage: S.stage.stage.id } }).then(function (result) {
     toast('已冻结 · ' + result.snapshot);
@@ -1174,6 +1186,41 @@ function freezeStage() {
 
 
 
+
+
+function agentRewriteDoc() {
+  if (!S.selected) { toast('先选择文档', true); return; }
+  toast('正在准备 agent 改写…');
+  api('/api/rewrite', { method: 'POST', body: { path: S.selected } }).then(function (data) {
+    openModal('Agent 写完 · ' + esc(data.path),
+      '<p class="tag">阶段：' + esc(data.stage) + ' · 闸门：' + esc(data.gate) + '</p>' +
+      '<p>agent 会保留现有结构、清掉占位、直接写回这个 Markdown 文件；完成后去收件箱。</p>' +
+      '<textarea id="rewrite-prompt" class="handoff-prompt" readonly></textarea>' +
+      '<div class="btn-row"><button class="btn primary" id="btn-rewrite-dsh">让 DSH 写完</button>' +
+      '<button class="btn" id="btn-rewrite-new">DSH 新会话</button>' +
+      '<button class="btn" id="btn-rewrite-copy">复制给 Agent</button></div>' +
+      '<p class="tag" id="rewrite-status">建议先 commit；运行中下面的阶段会被锁定。</p>');
+    const area = document.getElementById('rewrite-prompt');
+    if (area) area.value = data.prompt || '';
+    const copy = document.getElementById('btn-rewrite-copy');
+    if (copy) copy.addEventListener('click', function () {
+      if (navigator.clipboard) navigator.clipboard.writeText(area ? area.value : '').then(function () { toast('已复制'); });
+      else if (area) { area.select(); document.execCommand('copy'); }
+    });
+    const run = function (mode) {
+      const status = document.getElementById('rewrite-status');
+      if (status) status.textContent = 'DSH 启动中…';
+      api('/api/rewrite/run', { method: 'POST', body: { path: data.prompt_path, session: mode } }).then(function () {
+        if (status) status.textContent = 'DSH 已启动；阶段已锁定，完成后收件箱通知。';
+        openDshProgress();
+      }).catch(showError);
+    };
+    const dsh = document.getElementById('btn-rewrite-dsh');
+    if (dsh) dsh.addEventListener('click', function () { run('current'); });
+    const fresh = document.getElementById('btn-rewrite-new');
+    if (fresh) fresh.addEventListener('click', function () { run('new'); });
+  }).catch(showError);
+}
 
 function propagateDoc() {
   if (!S.selected) { toast('先选择文档', true); return; }
@@ -1324,6 +1371,7 @@ function showHandoff(handoff) {
 
 function nextStage() {
   if (!S.stage) return;
+  if (S.agentRunning) { toast('Agent 正在写当前项，完成后再进入下一步', true); return; }
   api('/api/next', { method: 'POST', body: { stage: S.stage.stage.id } }).then(function (result) {
     toast('进入 ' + result.current_stage);
     boot();
@@ -1343,12 +1391,18 @@ function refreshStage() {
 /* ---------------- Inbox ---------------- */
 
 function renderInbox() {
-  api('/api/state').then(function (state) {
+  Promise.all([api('/api/state'), api('/api/notifications').catch(function () { return { items: [] }; })]).then(function (result) {
+    const state = result[0];
+    const notes = (result[1].items || []).filter(function (n) { return !n.read; });
     S.state = state;
     renderShell();
     const main = document.getElementById('main');
     const subs = state.submissions || [];
-    main.innerHTML = '<div class="page-head"><div><h2>交接收件箱</h2><p>agent 的交付单在这里等你验收；通过后阶段进入待冻结。收件箱是可选流程，不影响你直接编辑文档。</p></div></div>' +
+    main.innerHTML = '<div class="page-head"><div><h2>交接收件箱</h2><p>agent 完成/交接后在这里通知；点击可直接跳到对应阶段。收件箱是可选流程，不影响你直接编辑文档。</p></div></div>' +
+      (notes.length ? '<div class="note-list">' + notes.map(function (note) {
+        return '<button class="note-item" data-note="' + esc(note.id) + '" data-target="' + esc(note.target || '') + '">' +
+          '<b>' + esc(note.title) + '</b><span>' + esc(note.body || '') + '</span><small>查看 ' + esc(note.target || '当前项') + ' →</small></button>';
+      }).join('') + '</div>' : '') +
       '<div class="list">' + (subs.length ? subs.map(function (sub) {
         return '<div class="list-item"><h4>' + esc(sub.title) + ' <span class="tag">' + esc(sub.stage + ' · ' + sub.status) + '</span></h4>' +
           '<p>' + esc(sub.note || '') + '</p>' +
@@ -1356,6 +1410,16 @@ function renderInbox() {
           (sub.status === 'pending' ? '<button class="btn" data-sub="' + esc(sub.id) + '" data-accept="0">退回</button><button class="btn primary" data-sub="' + esc(sub.id) + '" data-accept="1">通过</button>' : '<span class="tag">已处理</span>') +
           '</span></div></div>';
       }).join('') : '<div class="empty">暂无交付单。agent 可用 gameconsole.py submit 提交。</div>') + '</div>';
+    document.querySelectorAll('[data-note]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        const id = button.getAttribute('data-note');
+        const target = button.getAttribute('data-target');
+        api('/api/notifications/read', { method: 'POST', body: { id: id } }).then(function () {
+          if (target) { location.hash = '#/stage/' + target; boot(); }
+          else renderInbox();
+        }).catch(showError);
+      });
+    });
     document.querySelectorAll('[data-sub]').forEach(function (button) {
       button.addEventListener('click', function () {
         const accepted = button.getAttribute('data-accept') === '1';
@@ -1376,7 +1440,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.8.0', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.9.0', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';
@@ -1467,6 +1531,14 @@ function createProject() {
     toast('工程已创建：' + w.path);
     location.hash = '#/stage/P0';
     boot();
+    setTimeout(function () {
+      api('/api/rewrite', { method: 'POST', body: { path: 'docs/00_立项书.md' } }).then(function (data) {
+        return api('/api/rewrite/run', { method: 'POST', body: { path: data.prompt_path, session: 'new' } });
+      }).then(function () {
+        toast('Agent 正在补全 P0 立项书…');
+        openDshProgress();
+      }).catch(showError);
+    }, 1000);
   }).catch(showError);
 }
 
@@ -1478,7 +1550,7 @@ function renderProjectStart() {
     const projects = result[0] || {};
     const state = result[1] || {};
     const recent = (projects.recent || []).filter(Boolean);
-    app.innerHTML = '<header class="topbar start-topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>Game Studio OS</h1><div class="sub">本地游戏工作室 · 一个人也能走完 8 条管线</div></div></div><div class="top-actions">' + pill('v0.8.0', '') + '</div></header>' +
+    app.innerHTML = '<header class="topbar start-topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>Game Studio OS</h1><div class="sub">本地游戏工作室 · 一个人也能走完 8 条管线</div></div></div><div class="top-actions">' + pill('v0.9.0', '') + '</div></header>' +
       '<main class="main start-main"><section class="start-hero"><div><p class="tag">开始</p><h2>先决定在哪工作</h2><p>打开一个已有工程，或新建一个。控制台不会自动打开上次的测试工程。</p></div></section>' +
       '<div class="start-grid">' +
       '<section class="card start-card"><div class="start-icon">▤</div><h3>打开项目文件夹</h3><p>选择已有工程根目录；控制台会读取 docs/、.gameconsole/ 与阶段状态。</p>' +
@@ -1541,6 +1613,42 @@ function loadLandingBrowser(path) {
 
 /* ---------------- Router / boot ---------------- */
 
+
+function refreshAgentStatus() {
+  if (!S.state || S.state.needs_project) return;
+  api('/api/handoff/status').then(function (data) {
+    const running = !!data.running;
+    const was = S.agentRunning;
+    S.agentRunning = running;
+    S.agentData = data;
+    ['btn-next', 'btn-freeze', 'btn-handoff'].forEach(function (id) {
+      const button = document.getElementById(id);
+      if (button) button.disabled = running || (id === 'btn-next' && (!S.stage || S.stage.stage.status !== 'frozen'));
+    });
+    if (running) {
+      const bar = document.getElementById('agent-lock');
+      if (!bar) {
+        const main = document.getElementById('main');
+        if (main) {
+          const node = document.createElement('div');
+          node.id = 'agent-lock';
+          node.className = 'agent-lock';
+          node.textContent = 'Agent 正在写当前项；后续流程暂时锁定。点「DSH 进度」查看日志。';
+          main.insertBefore(node, main.firstChild);
+        }
+      }
+    } else {
+      const bar = document.getElementById('agent-lock');
+      if (bar) bar.remove();
+      if (was) {
+        toast('Agent 已完成；请查看收件箱');
+        boot();
+        return;
+      }
+    }
+    if (!S.agentTimer) S.agentTimer = setInterval(refreshAgentStatus, 3000);
+  }).catch(function () { /* 无项目或服务未就绪时静默 */ });
+}
 function boot() {
   Promise.all([api('/api/state'), api('/api/time').catch(function () { return null; })]).then(function (result) {
     const state = result[0];

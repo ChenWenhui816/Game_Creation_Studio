@@ -285,6 +285,8 @@ def build_project(root, asset_rows=None, numbers=None, weeks=4, checked=2, unche
                   extra=("盲测：3 人各 20 分钟，卡点 2 处。键鼠全流程通过，手柄全流程通过。" if blind_test else "键鼠 手柄")))
     for index in range(weeks):
         write(root / "docs" / "11_周报" / ("2026-W%02d.md" % (index + 1)), md_text("11_周报.md"))
+    write(root / "docs" / "17_视频PV制作单.md",
+          md_text("17_视频PV制作单.md", extra=TABLE))
     write(root / "docs" / "12_Demo上线清单.md",
           build_checklist("12_Demo上线清单.md", checked, unchecked))
     write(root / "docs" / "13_多语言商店素材清单.md",

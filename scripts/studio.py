@@ -24,10 +24,10 @@ PIPELINES = [
     ("00", "00_立项", "Concept & Scope", "P0"),
     ("01", "01_标准", "Standards & Docs", "P1"),
     ("02", "02_剧本", "Script & Narrative", "P2"),
-    ("03", "03_白模与技术", "Whitebox & Tech", "P3"),
-    ("04", "04_美术与视频", "Art & Video", "P4"),
+    ("03", "03_概念与美术", "Whitebox & Tech", "P3"),
+    ("04", "04_测试与技术", "Art & Video", "P4"),
     ("05", "05_音乐与音频", "Music & Audio", "P5"),
-    ("06", "06_内容生产", "Content Production", "P6"),
+    ("06", "06_内容生产与视频", "Content Production", "P6"),
     ("07", "07_上线与发行", "Release & Publishing", "P7"),
 ]
 
@@ -48,10 +48,10 @@ ROUTE_RULES = [
     ("P0", ["立项", "范围", "想法", "平台", "concept", "scope"], "00_立项"),
     ("P1", ["GDD", "标准", "数值", "技术方案", "art bible", "standards"], "01_标准"),
     ("P2", ["剧本", "故事", "角色", "台词", "场景", "镜头", "分镜", "script", "story", "storyboard"], "02_剧本"),
-    ("P3", ["白模", "UE", "工程", "蓝图", "性能", "输入", "whitebox", "blueprint", "unreal"], "03_白模与技术"),
-    ("P4", ["美术", "资产", "Blender", "贴图", "UI", "PV", "视频", "art", "asset", "video"], "04_美术与视频"),
+    ("P3", ["白模", "UE", "工程", "蓝图", "性能", "输入", "whitebox", "blueprint", "unreal"], "03_概念与美术"),
+    ("P4", ["美术", "资产", "Blender", "贴图", "UI", "PV", "视频", "art", "asset", "video"], "04_测试与技术"),
     ("P5", ["音乐", "音效", "配音", "混音", "Wwise", "MetaSounds", "music", "audio", "voice"], "05_音乐与音频"),
-    ("P6", ["关卡", "敌人", "Boss", "任务", "收集", "内容", "level", "enemy", "content"], "06_内容生产"),
+    ("P6", ["关卡", "敌人", "Boss", "任务", "收集", "内容", "level", "enemy", "content"], "06_内容生产与视频"),
     ("P7", ["打包", "Steam", "主机", "商店", "认证", "发布", "release", "store", "console"], "07_上线与发行"),
 ]
 

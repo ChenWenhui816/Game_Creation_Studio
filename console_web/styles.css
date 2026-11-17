@@ -419,3 +419,14 @@ img.logo { object-fit: cover; display: block; background: #0b1026; }
 .dsh-cmd code { font-family: var(--font-mono); font-size: 10px; color: var(--muted); word-break: break-all; }
 .dsh-log-head { color: var(--muted); font-size: 11px; margin-top: 4px; }
 .log-tail { max-height: 320px; overflow: auto; background: #070b18; border: 1px solid var(--line-soft); border-radius: 10px; padding: 10px; font-family: var(--font-mono); font-size: 10px; line-height: 1.55; color: #b8c7df; white-space: pre-wrap; word-break: break-word; }
+
+/* agent workflow */
+.stage-item.locked { opacity: .42; cursor: not-allowed; }
+.stage-item.locked:hover { background: transparent; }
+.agent-lock { margin: 0 0 14px; padding: 10px 12px; border: 1px solid rgba(245,158,11,.45); background: rgba(245,158,11,.08); color: var(--warn); border-radius: 10px; font-size: 12px; }
+.note-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.note-item { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; text-align: left; width: 100%; padding: 12px 14px; border: 1px solid rgba(45,212,191,.30); border-radius: 10px; background: rgba(45,212,191,.07); color: var(--text); }
+.note-item b { font-size: 13px; }
+.note-item span { grid-column: 1; color: var(--muted); font-size: 11px; }
+.note-item small { grid-row: 1 / span 2; grid-column: 2; align-self: center; color: var(--accent); font-size: 11px; }
+.note-item:hover { background: rgba(45,212,191,.12); }

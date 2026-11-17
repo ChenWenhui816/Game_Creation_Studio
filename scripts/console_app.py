@@ -255,6 +255,27 @@ def _shutdown_for_update() -> None:
 
 
 
+
+def refresh_desktop_shortcut() -> None:
+    if os.name != "nt" or not getattr(sys, "frozen", False):
+        return
+    try:
+        desktop = Path.home() / "Desktop"
+        link = desktop / (version.APP_NAME + ".lnk")
+        if not link.is_file():
+            return
+        exe = Path(sys.executable).resolve()
+        script = (
+            "$s=(New-Object -ComObject WScript.Shell).CreateShortcut('%s');"
+            "$s.TargetPath='%s';$s.WorkingDirectory='%s';$s.IconLocation='%s,0';$s.Save()"
+        ) % (str(link).replace("'", "''"), str(exe).replace("'", "''"),
+             str(exe.parent).replace("'", "''"), str(exe).replace("'", "''"))
+        subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                        "-Command", script], capture_output=True, timeout=15,
+                       creationflags=0x08000000)
+    except Exception:  # noqa: BLE001
+        pass
+
 def start_agent_bridge(project) -> None:
     if project is None:
         return
@@ -355,6 +376,7 @@ def main(argv=None) -> int:
     print("项目：%s" % (project.root if project else "新建项目向导"))
     print("地址：%s" % url)
     start_agent_bridge(project)
+    refresh_desktop_shortcut()
     if args.serve_only:
         try:
             while True:

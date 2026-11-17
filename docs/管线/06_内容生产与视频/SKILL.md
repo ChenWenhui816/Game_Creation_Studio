@@ -1,17 +1,17 @@
 ---
-name: pipeline-06_内容生产
+name: pipeline-06_内容生产与视频
 description: Content Production pipeline for the UE5 solo game studio; use when working on this lane.
-when_to_use: 把白模、资产、剧本、音频组装成完整可通关的游戏。
+when_to_use: 组装完整可通关内容；PV/视频放到测试完成后再做。
 inputs: 白模 | 资产库 | 剧本/任务 | 音频
-outputs: 全部关卡 | 敌人/Boss/收集 | 剧情/任务/UI | 周报与验收单
-gates: G6 全流程通关
+outputs: 全部关卡 | 敌人/Boss/收集 | 剧情/任务/UI | docs/17_视频PV制作单.md | 周报
+gates: G6 全流程通关 + PV
 owner: studio
-version: 0.8.0
+version: 0.9.0
 ---
 
-# 06 · 内容生产 · Agent Contract
+# 06 · 内容生产与视频 · Agent Contract
 
-Read `docs/管线/06_内容生产/README.md` first.
+Read `docs/管线/06_内容生产与视频/README.md` first.
 
 ## 必须做
 

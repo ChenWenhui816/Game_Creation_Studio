@@ -1,6 +1,6 @@
 ---
 name: ue5-solo-game
-description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控（中英双语入口）。覆盖 8 条管线：立项、标准、剧本、白模与技术、美术与视频、音乐与音频、内容生产、上线发行。用于 UE 5.8 开发、AI 美术/视频/音频管线、MCP 工具总线、键鼠+手柄双输入、关卡制作、截图巡览、测试打包、Steam/主机 Demo 上线与版本迭代。按管线路由到 references / docs/管线，并用 scripts/gamecheck.py 跑闸门。
+description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控（中英双语入口）。覆盖 8 条管线：立项、标准、剧本、概念与美术、测试与技术、音乐与音频、内容生产与视频、上线发行。用于 UE 5.8 开发、AI 美术/视频/音频管线、MCP 工具总线、键鼠+手柄双输入、关卡制作、截图巡览、测试打包、Steam/主机 Demo 上线与版本迭代。按管线路由到 references / docs/管线，并用 scripts/gamecheck.py 跑闸门。
 
 > English entry: [SKILL.en.md](SKILL.en.md) ｜ 中文入口：本文件
 > 可视化控制台：`python scripts/gameconsole.py serve`（说明见 `docs/控制台使用指南.md`）
@@ -47,12 +47,12 @@ description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控�
 | P0 立项 | `docs/管线/00_立项/README.md` | `studio explain 00` | 没有 `docs/00_立项书.md` |
 | P1 标准 | `docs/管线/01_标准/README.md` | `gate spec` | G1 未过 |
 | P2 剧本 | `docs/管线/02_剧本/README.md` | `gate script` | 场景/镜头/台词 ID 不齐 |
-| P3 白模与技术 | `docs/管线/03_白模与技术/README.md` | `gate whitebox` | 角色不能跑跳或盲测未过 |
-| P4 美术与视频 | `docs/管线/04_美术与视频/README.md` | `gate art` | 资产清单/PV 制作单未过 |
+| P3 概念与美术 | `docs/管线/03_概念与美术/README.md` | `gate art` | 美术圣经/资产清单未过 |
+| P4 测试与技术 | `docs/管线/04_测试与技术/README.md` | `gate whitebox` | 白模/盲测/性能未过 |
 | P5 音乐与音频 | `docs/管线/05_音乐与音频/README.md` | `gate audio` | 音乐/音效/配音 ID 或集成未过 |
-| P6 内容生产 | `docs/管线/06_内容生产/README.md` | `gate content` | 没有全流程通关 |
+| P6 内容生产 | `docs/管线/06_内容生产与视频/README.md` | `gate content` | 没有全流程通关 |
 | P7 上线与发行 | `docs/管线/07_上线与发行/README.md` | `gate release` | 上线清单/13 清单未全勾 |
-| 资产管线 / 每日截图 | `docs/管线/04_美术与视频/README.md` | `asset_registry.py scan` / `daily_gallery.py` | 导入靠手点、资产靠猜 |
+| 资产管线 / 每日截图 | `docs/管线/04_测试与技术/README.md` | `asset_registry.py scan` / `daily_gallery.py` | 导入靠手点、资产靠猜 |
 | 范围失控 / 返工 / 砍功能 | `references/06-风险与反模式.md` | — | 变更单堆积、周报连续阻塞 |
 | 控制台 / 新建工程 | `docs/控制台使用指南.md` | `gameconsole.py serve` | 没有 `.gameconsole/state.json` |
 | MCP / 工具接入 | `mcp/README.md` | `mcp_gateway.py doctor` | 工具状态不可见/权限不清 |

@@ -6,7 +6,7 @@ inputs: user request, project files, current stage, engine version
 outputs: pipeline id, docs to load, gate to run, next action
 gates: maps to G0–G7
 owner: producer
-version: 0.8.0
+version: 0.9.0
 ---
 
 # Studio Router / 工作室路由器
@@ -29,10 +29,10 @@ version: 0.8.0
 | 立项、范围、想法、平台 | P0 | docs/管线/00_立项/README.md |
 | GDD、标准、数值、技术方案 | P1 | docs/管线/01_标准/README.md |
 | 剧本、故事、角色、台词、场景、镜头、分镜 | P2/P4 | docs/管线/02_剧本/README.md |
-| 白模、UE、工程、蓝图、性能、输入 | P3 | docs/管线/03_白模与技术/README.md |
-| 美术、资产、Blender、贴图、UI、PV、视频 | P4 | docs/管线/04_美术与视频/README.md |
+| 白模、UE、工程、蓝图、性能、输入 | P3 | docs/管线/03_概念与美术/README.md |
+| 美术、资产、Blender、贴图、UI、PV、视频 | P4 | docs/管线/04_测试与技术/README.md |
 | 音乐、音效、配音、混音、Wwise、MetaSounds | P5 | docs/管线/05_音乐与音频/README.md |
-| 关卡、敌人、Boss、任务、收集、内容 | P6 | docs/管线/06_内容生产/README.md |
+| 关卡、敌人、Boss、任务、收集、内容 | P6 | docs/管线/06_内容生产与视频/README.md |
 | 打包、Steam、主机、商店、认证、发布 | P7 | docs/管线/07_上线与发行/README.md |
 | MCP、工具、权限、审计 | 跨管线 | mcp/README.md |
 
