@@ -6,7 +6,7 @@ inputs: 美术圣经 | 剧本/分镜 | 白模比例 | 资产清单
 outputs: 概念/角色/场景/道具/UI/VFX | UE 导入资产 | 分镜/Animatic/Previz | PV 母版与多语言版本
 gates: G4 风格与管线锁定
 owner: studio
-version: 0.7.3
+version: 0.7.4
 ---
 
 # 04 · 美术与视频 · Agent Contract

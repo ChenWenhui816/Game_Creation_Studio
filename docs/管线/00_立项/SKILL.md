@@ -6,7 +6,7 @@ inputs: 一句话想法 | 目标平台与主机优先级 | 可投入时间/预�
 outputs: docs/00_立项书.md | 范围与不做清单 | 最大风险 | 目标体验
 gates: G0 立项书可复述
 owner: studio
-version: 0.7.3
+version: 0.7.4
 ---
 
 # 00 · 立项 · Agent Contract

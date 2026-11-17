@@ -1,10 +1,10 @@
 # GitHub 发布指南
 
-> 适用对象：本仓库的维护者（一个人，非程序出身）。｜ 当前状态：本地仓库已初始化（`main` 分支），并已发布到 https://github.com/ChenWenhui816/Personal_Game_Studio_UE （当前 `v0.7.3`，CI 绿）。｜ 读完能做到：从零把仓库推到 GitHub、发第一个 Release、之后每周 30 分钟迭代、让使用者安装与升级。
+> 适用对象：本仓库的维护者（一个人，非程序出身）。｜ 当前状态：本地仓库已初始化（`main` 分支），并已发布到 https://github.com/ChenWenhui816/Personal_Game_Studio_UE （当前 `v0.7.4`，CI 绿）。｜ 读完能做到：从零把仓库推到 GitHub、发第一个 Release、之后每周 30 分钟迭代、让使用者安装与升级。
 
 本指南所有命令均为 **Windows 11 + PowerShell** 写法，可逐行复制执行。Web 界面按钮名称以你看到的 GitHub 页面为准；GitHub 会改版，找不到按钮时按关键词搜官方文档（链接见相关小节）。
 
-> 已发布：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE> ｜ 最新 Release：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE/releases/tag/v0.7.3>
+> 已发布：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE> ｜ 最新 Release：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE/releases/tag/v0.7.4>
 >
 > 下文用 `v0.1.0` 演示“第一次发 Release”的完整流程；当前版本以仓库 Releases 页为准。
 >

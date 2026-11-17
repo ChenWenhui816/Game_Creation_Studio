@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.3）。
+r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.7.4）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的 8 条管线、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.7.3"
+CONSOLE_VERSION = _version.VERSION if _version else "0.7.4"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
