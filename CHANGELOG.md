@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-11-17
+
+### Changed
+
+- 项目正式更名为 **Game Creation Studio**；GitHub 仓库同步改名。
+- 浏览器版成为主路径：start.cmd 或 python scripts/gameconsole.py serve，无需安装包。
+- 桌面壳与 Inno Setup 安装包保留为可选归档，所有控制台功能不变。
+- README 阶段顺序修正为 P3 概念与美术、P4 测试与技术、P6 内容生产与视频。
+- 本地自签名路径保留；SignPath 免费公共签名配置保留。
+
 ## [0.9.0] - 2026-11-17
 
 ### Added

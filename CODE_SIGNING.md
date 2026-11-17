@@ -4,10 +4,10 @@ Free code signing provided by [SignPath.io](https://signpath.io), certificate by
 
 ## Scope
 
-This policy applies to Windows release artifacts of Personal_Game_Studio_UE:
+This policy applies to Windows release artifacts of Game_Creation_Studio:
 
-- Personal_Game_Studio_UE.exe
-- Personal_Game_Studio_UE-<version>-setup.exe
+- Game_Creation_Studio.exe
+- Game_Creation_Studio-<version>-setup.exe
 
 ## Roles
 
@@ -22,7 +22,7 @@ Every SignPath signing request requires a manual approval by the Approver.
 ## Build origin
 
 - Builds run on GitHub-hosted runners via GitHub Actions.
-- Source: https://github.com/ChenWenhui816/Personal_Game_Studio_UE
+- Source: https://github.com/ChenWenhui816/Game_Creation_Studio
 - SignPath GitHub App is restricted to this repository.
 - The signing request is created from the artifact uploaded by the same workflow run.
 

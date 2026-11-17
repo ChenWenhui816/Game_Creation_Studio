@@ -32,7 +32,7 @@
 只依赖 Python 标准库，不需要 `pip install`。Windows PowerShell 下执行：
 
 ```powershell
-cd Personal_Game_Studio_UE   # 换成你的克隆目录
+cd Game_Creation_Studio   # 换成你的克隆目录
 python --version
 python -m unittest discover -s tests -v
 python scripts/gamecheck.py --help

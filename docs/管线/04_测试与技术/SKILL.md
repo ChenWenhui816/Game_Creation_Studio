@@ -6,7 +6,7 @@ inputs: GDD | 技术方案 | 美术圣经 | 资产清单 | 剧本场景
 outputs: UE 5.8 工程 | 灰盒关卡 | docs/10_测试记录.md | 性能/盲测证据
 gates: G4 白模/测试可玩
 owner: studio
-version: 0.9.0
+version: 0.9.1
 ---
 
 # 04 · 测试与技术 · Agent Contract

@@ -10,22 +10,22 @@
 
 1. 打开 https://signpath.org/apply
 2. 用 GitHub 登录并提交仓库：
-   https://github.com/ChenWenhui816/Personal_Game_Studio_UE
+   https://github.com/ChenWenhui816/Game_Creation_Studio
 3. 审核通过后安装 SignPath GitHub App，允许访问该仓库。
 
 ## 2. 申请时可直接填写
 
 Code signing policy URL（可直接填）：
-https://github.com/ChenWenhui816/Personal_Game_Studio_UE/blob/main/CODE_SIGNING.md
+https://github.com/ChenWenhui816/Game_Creation_Studio/blob/main/CODE_SIGNING.md
 
 
 | 字段 | 建议填写 |
 |---|---|
-| Project / repository | https://github.com/ChenWenhui816/Personal_Game_Studio_UE |
+| Project / repository | https://github.com/ChenWenhui816/Game_Creation_Studio |
 | License | MIT |
 | Project type | Desktop application / game development tool |
 | Description | A local-first one-person UE5 game studio console: project stages, gates, agent handoff and document editing. |
-| Release | https://github.com/ChenWenhui816/Personal_Game_Studio_UE/releases |
+| Release | https://github.com/ChenWenhui816/Game_Creation_Studio/releases |
 | Build system | GitHub Actions |
 | Signing policy | release-signing |
 | Artifact configs | app, installer |
@@ -33,7 +33,7 @@ https://github.com/ChenWenhui816/Personal_Game_Studio_UE/blob/main/CODE_SIGNING.
 申请说明可写：
 
 ---
-Personal_Game_Studio_UE is an MIT-licensed, actively maintained local-first
+Game_Creation_Studio is an MIT-licensed, actively maintained local-first
 game studio console. It ships a Windows PyInstaller app plus an Inno Setup
 installer. All release builds run on GitHub-hosted runners. We want to sign
 both the main executable and the installer so users do not get Unknown
@@ -45,7 +45,7 @@ from this repository.
 
 在 SignPath 控制台创建：
 
-- Organization：Personal Game Studio
+- Organization：Game Creation Studio
 - Project slug：personal-game-studio-ue
 - Signing policy slug：release-signing
 - Artifact configuration slug：app

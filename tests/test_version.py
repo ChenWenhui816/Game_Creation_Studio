@@ -22,7 +22,7 @@ class VersionTests(unittest.TestCase):
         self.assertFalse(version.is_newer("0.3.9", "0.4.0"))
 
     def test_repo_name(self):
-        self.assertEqual(version.REPO_NAME, "Personal_Game_Studio_UE")
+        self.assertEqual(version.REPO_NAME, "Game_Creation_Studio")
 
 
 if __name__ == "__main__":

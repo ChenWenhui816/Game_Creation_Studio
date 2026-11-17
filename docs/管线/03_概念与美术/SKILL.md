@@ -6,7 +6,7 @@ inputs: GDD | 剧本场景需求 | 美术偏好 | 资产预算
 outputs: docs/02_美术圣经.md | docs/05_资产清单.csv | 概念图/色板 | 管线验证
 gates: G3 概念与美术锁定
 owner: studio
-version: 0.9.0
+version: 0.9.1
 ---
 
 # 03 · 概念与美术 · Agent Contract

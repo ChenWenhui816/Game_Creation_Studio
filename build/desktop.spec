@@ -1,10 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller spec：Personal_Game_Studio_UE 桌面版。
+"""PyInstaller spec：Game_Creation_Studio 桌面版。
 
 构建：
     python -m PyInstaller --noconfirm --clean build/desktop.spec
 输出：
-    dist/Personal_Game_Studio_UE/
+    dist/Game_Creation_Studio/
 """
 
 from pathlib import Path
@@ -58,7 +58,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="Personal_Game_Studio_UE",
+    name="Game_Creation_Studio",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -78,5 +78,5 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name="Personal_Game_Studio_UE",
+    name="Game_Creation_Studio",
 )

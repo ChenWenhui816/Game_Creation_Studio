@@ -52,20 +52,20 @@ jobs:
       - name: Package zip
         shell: pwsh
         run: |
-          Compress-Archive -Path dist/Personal_Game_Studio_UE -DestinationPath "dist/Personal_Game_Studio_UE-$env:VERSION.zip" -CompressionLevel Optimal
+          Compress-Archive -Path dist/Game_Creation_Studio -DestinationPath "dist/Game_Creation_Studio-$env:VERSION.zip" -CompressionLevel Optimal
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Personal_Game_Studio_UE-${{ github.ref_name }}
+          name: Game_Creation_Studio-${{ github.ref_name }}
           path: |
-            dist/Personal_Game_Studio_UE-${{ env.VERSION }}.zip
-            dist/Personal_Game_Studio_UE-${{ env.VERSION }}-setup.exe
+            dist/Game_Creation_Studio-${{ env.VERSION }}.zip
+            dist/Game_Creation_Studio-${{ env.VERSION }}-setup.exe
 
       - name: Attach to Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/Personal_Game_Studio_UE-${{ env.VERSION }}.zip
-            dist/Personal_Game_Studio_UE-${{ env.VERSION }}-setup.exe
+            dist/Game_Creation_Studio-${{ env.VERSION }}.zip
+            dist/Game_Creation_Studio-${{ env.VERSION }}-setup.exe

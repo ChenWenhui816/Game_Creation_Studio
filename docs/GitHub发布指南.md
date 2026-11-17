@@ -1,10 +1,10 @@
 # GitHub 发布指南
 
-> 适用对象：本仓库的维护者（一个人，非程序出身）。｜ 当前状态：本地仓库已初始化（`main` 分支），并已发布到 https://github.com/ChenWenhui816/Personal_Game_Studio_UE （当前 `v0.9.0`，CI 绿）。｜ 读完能做到：从零把仓库推到 GitHub、发第一个 Release、之后每周 30 分钟迭代、让使用者安装与升级。
+> 适用对象：本仓库的维护者（一个人，非程序出身）。｜ 当前状态：本地仓库已初始化（`main` 分支），并已发布到 https://github.com/ChenWenhui816/Game_Creation_Studio （当前 `v0.9.1`，CI 绿）。｜ 读完能做到：从零把仓库推到 GitHub、发第一个 Release、之后每周 30 分钟迭代、让使用者安装与升级。
 
 本指南所有命令均为 **Windows 11 + PowerShell** 写法，可逐行复制执行。Web 界面按钮名称以你看到的 GitHub 页面为准；GitHub 会改版，找不到按钮时按关键词搜官方文档（链接见相关小节）。
 
-> 已发布：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE> ｜ 最新 Release：<https://github.com/ChenWenhui816/Personal_Game_Studio_UE/releases/tag/v0.9.0>
+> 已发布：<https://github.com/ChenWenhui816/Game_Creation_Studio> ｜ 最新 Release：<https://github.com/ChenWenhui816/Game_Creation_Studio/releases/tag/v0.9.1>
 >
 > 下文用 `v0.1.0` 演示“第一次发 Release”的完整流程；当前版本以仓库 Releases 页为准。
 >
@@ -13,9 +13,9 @@
 **最短路径**（已完成第 0 节准备时，5 条命令完成推送）：
 
 ```powershell
-cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE
+cd D:\AI_Project\Deepseek\Creat_Game\Game_Creation_Studio
 git status
-git remote add origin https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git
+git remote add origin https://github.com/ChenWenhui816/Game_Creation_Studio.git
 git branch -M main
 git push -u origin main
 ```
@@ -138,7 +138,7 @@ gh auth status
 ## 1. 检查本地仓库（2 分钟）
 
 ```powershell
-cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE
+cd D:\AI_Project\Deepseek\Creat_Game\Game_Creation_Studio
 git status
 git log --oneline -5
 git tag
@@ -175,12 +175,12 @@ git config user.email
 |---|---|---|---|
 | 1 | 浏览器登录 GitHub 后，右上角 `+` → **New repository**（或直接打开 https://github.com/new） | — | 出现 Create a new repository 表单 |
 | 2 | Owner | 选 `ChenWenhui816` | 下拉框显示用户名 |
-| 3 | Repository name | `Personal_Game_Studio_UE`（与本地目录大小写完全一致） | 右侧出现绿色对勾 |
+| 3 | Repository name | `Game_Creation_Studio`（与本地目录大小写完全一致） | 右侧出现绿色对勾 |
 | 4 | Description | `面向 UE5 单机 3D 游戏的一人工作室 OS：8 管线 + 8 道可执行闸门 + 18 份模板 + 控制台 + MCP Gateway。` | 输入框有内容 |
 | 5 | 可见性 | 选 **Public** | Public 单选被选中 |
 | 6 | Initialize this repository with | **三个都不要勾**（Add a README / Add .gitignore / Choose a license） | 三个复选框全空 |
 | 7 | 点 **Create repository** | — | 跳到 "Quick setup" 页面，显示仓库地址 |
-| 8 | 复制地址 | `https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git` | 地址栏是 github.com/ChenWenhui816/Personal_Game_Studio_UE |
+| 8 | 复制地址 | `https://github.com/ChenWenhui816/Game_Creation_Studio.git` | 地址栏是 github.com/ChenWenhui816/Game_Creation_Studio |
 
 **为什么第 6 步全不勾**：本地已经有 `README.md`、`.gitignore`、`LICENSE`，远程再生成一份就会和本地冲突，首次 push 直接被拒。GitHub 的默认勾选是给"从零开始"的仓库用的。
 
@@ -189,8 +189,8 @@ git config user.email
 ### 2.2 gh CLI 等价命令（装了 gh 才用）
 
 ```powershell
-cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE
-gh repo create Personal_Game_Studio_UE --public --source=. --remote=origin --push --description "面向 UE5 单机 3D 游戏的一人工作室 OS：8 管线 + 8 道可执行闸门 + 18 份模板 + 控制台 + MCP Gateway。"
+cd D:\AI_Project\Deepseek\Creat_Game\Game_Creation_Studio
+gh repo create Game_Creation_Studio --public --source=. --remote=origin --push --description "面向 UE5 单机 3D 游戏的一人工作室 OS：8 管线 + 8 道可执行闸门 + 18 份模板 + 控制台 + MCP Gateway。"
 ```
 
 这条命令**已经包含推送**，等于自动完成第 3 节，之后直接跳到第 4 节。注意：
@@ -202,7 +202,7 @@ gh repo create Personal_Game_Studio_UE --public --source=. --remote=origin --pus
 
 | 项 | 建议 | 约束（以 GitHub 文档为准） |
 |---|---|---|
-| 仓库名 | `Personal_Game_Studio_UE` | 与 URL 大小写一致；避免中文与空格 |
+| 仓库名 | `Game_Creation_Studio` | 与 URL 大小写一致；避免中文与空格 |
 | 描述 | 上面第 4 步那句 | 100 字符以内更易完整显示 |
 | Topics | `game-dev`、`unreal-engine`、`ai-agent`、`skill`、`gamedev-workflow` | 每个 topic 只能小写字母、数字、连字符，≤50 字符；建议 5–10 个 |
 | 可见性 | 起步用 Public | Private 也能用 CI 与 Release，但别人搜不到；改可见性：Settings → General → Danger Zone → Change visibility |
@@ -216,8 +216,8 @@ Topics 在第 4 节填。
 ### 3.0 绑定远程仓库并确认分支名
 
 ```powershell
-cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE
-git remote add origin https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git
+cd D:\AI_Project\Deepseek\Creat_Game\Game_Creation_Studio
+git remote add origin https://github.com/ChenWenhui816/Game_Creation_Studio.git
 git remote -v
 git branch -M main
 git branch --show-current
@@ -310,7 +310,7 @@ Hi ChenWenhui816! You've successfully authenticated, but GitHub does not provide
 **第五步：切换远程地址并推送**
 
 ```powershell
-git remote set-url origin git@github.com:ChenWenhui816/Personal_Game_Studio_UE.git
+git remote set-url origin git@github.com:ChenWenhui816/Game_Creation_Studio.git
 git remote -v
 git push -u origin main
 ```
@@ -329,7 +329,7 @@ git push -u origin main
 
 ## 4. 仓库设置（5 分钟）
 
-打开 https://github.com/ChenWenhui816/Personal_Game_Studio_UE ，逐项做：
+打开 https://github.com/ChenWenhui816/Game_Creation_Studio ，逐项做：
 
 | 项 | 位置 | 怎么设 | 通过标准 |
 |---|---|---|---|
@@ -374,7 +374,7 @@ SemVer 规范（中文）：https://semver.org/lang/zh-CN/
 先看本地有没有 tag：
 
 ```powershell
-cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE
+cd D:\AI_Project\Deepseek\Creat_Game\Game_Creation_Studio
 git tag
 ```
 
@@ -402,7 +402,7 @@ git push origin v0.1.0
 
 ### 5.3 在 GitHub 建 Release
 
-1. 浏览器打开 https://github.com/ChenWenhui816/Personal_Game_Studio_UE/releases
+1. 浏览器打开 https://github.com/ChenWenhui816/Game_Creation_Studio/releases
 2. 点 **Draft a new release**（或 **Create a new release**）
 3. **Choose a tag**：下拉选 `v0.1.0`（列表里已有，因为第 5.2 节推送过）；Target 选 `main`
 4. **Release title**：`v0.1.0 — 首个公开版本`
@@ -416,7 +416,7 @@ git push origin v0.1.0
 6. **附件（可选）**：本仓库没有二进制，GitHub 会为每个 Release 自动生成 **Source code (zip)** 与 **(tar.gz)**，够用。想要一个带正确目录名的 ZIP，本地生成后拖进 "Attach binaries" 区域：
 
 ```powershell
-git archive --format=zip --prefix=Personal_Game_Studio_UE/ -o ..\Personal_Game_Studio_UE-v0.1.0.zip HEAD
+git archive --format=zip --prefix=Game_Creation_Studio/ -o ..\Game_Creation_Studio-v0.1.0.zip HEAD
 ```
 
 7. 确认勾选 **Set as the latest release**，点 **Publish release**
@@ -465,7 +465,7 @@ git pull 或下载 Source code (zip) 覆盖；
 完整命令：
 
 ```powershell
-cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE
+cd D:\AI_Project\Deepseek\Creat_Game\Game_Creation_Studio
 git pull
 python -m unittest discover -s tests -v
 git add -A
@@ -567,14 +567,14 @@ python -m unittest discover -s tests -v
 
 ```powershell
 New-Item -ItemType Directory -Force D:\AI_Project\skills | Out-Null
-git clone https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git D:\AI_Project\skills\Personal_Game_Studio_UE
+git clone https://github.com/ChenWenhui816/Game_Creation_Studio.git D:\AI_Project\skills\Game_Creation_Studio
 ```
 
 | 环境 | 放哪里 | 命令 | 验证 |
 |---|---|---|---|
-| **DSH** | profile 的技能目录（本机 profile 根目录在 `C:\Users\<用户名>\.dsh\profiles\` 下，具体路径以 DSH 界面/官方文档为准） | 见下方代码块 | 重启会话后技能列表中能看到 `ue5-solo-game` |
-| **Claude Code**（全局） | `C:\Users\<用户名>\.claude\skills\ue5-solo-game\` | 见下方代码块 | 会话里能看到 skill 描述 |
-| **Claude Code**（项目级） | `<游戏项目>\.claude\skills\ue5-solo-game\` | 把仓库复制进去即可 | 同上 |
+| **DSH** | profile 的技能目录（本机 profile 根目录在 `C:\Users\<用户名>\.dsh\profiles\` 下，具体路径以 DSH 界面/官方文档为准） | 见下方代码块 | 重启会话后技能列表中能看到 `game-creation-studio` |
+| **Claude Code**（全局） | `C:\Users\<用户名>\.claude\skills\game-creation-studio\` | 见下方代码块 | 会话里能看到 skill 描述 |
+| **Claude Code**（项目级） | `<游戏项目>\.claude\skills\game-creation-studio\` | 把仓库复制进去即可 | 同上 |
 | **Codex** | 把 `AGENTS.md` 复制到游戏项目根 | 见下方代码块 | 新会话自动读取项目规则 |
 | **Cursor** | 项目根放 `AGENTS.md`；或在 `.cursor/rules/` 加一条指向它（支持情况以 Cursor 官方文档为准） | 复制 `AGENTS.md` | Cursor 对话中能引用到流程 |
 | **其他 agent** | 让 agent 先读 `SKILL.md` | — | agent 能说出当前阶段与下一步命令 |
@@ -583,7 +583,7 @@ git clone https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git D:\AI_Pro
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:USERPROFILE\.dsh\profiles\desktop\skills" | Out-Null
-Copy-Item -Recurse -Force D:\AI_Project\skills\Personal_Game_Studio_UE "$env:USERPROFILE\.dsh\profiles\desktop\skills\ue5-solo-game"
+Copy-Item -Recurse -Force D:\AI_Project\skills\Game_Creation_Studio "$env:USERPROFILE\.dsh\profiles\desktop\skills\game-creation-studio"
 Get-ChildItem "$env:USERPROFILE\.dsh\profiles\desktop\skills"
 ```
 
@@ -593,10 +593,10 @@ Get-ChildItem "$env:USERPROFILE\.dsh\profiles\desktop\skills"
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills" | Out-Null
-Copy-Item -Recurse -Force D:\AI_Project\skills\Personal_Game_Studio_UE "$env:USERPROFILE\.claude\skills\ue5-solo-game"
+Copy-Item -Recurse -Force D:\AI_Project\skills\Game_Creation_Studio "$env:USERPROFILE\.claude\skills\game-creation-studio"
 ```
 
-注意：Claude Code 要求技能目录根下有 `SKILL.md`。本仓库的 `SKILL.md` 已带 `name: ue5-solo-game` 与 `description`，可直接用；目录名与 `name` 不一致时以 `name` 为准（以 Claude Code 官方文档为准）。
+注意：Claude Code 要求技能目录根下有 `SKILL.md`。本仓库的 `SKILL.md` 已带 `name: game-creation-studio` 与 `description`，可直接用；目录名与 `name` 不一致时以 `name` 为准（以 Claude Code 官方文档为准）。
 
 **Codex / Cursor**：
 
@@ -604,31 +604,31 @@ Copy-Item -Recurse -Force D:\AI_Project\skills\Personal_Game_Studio_UE "$env:USE
 
 ```powershell
 # init 已生成 D:\games\my-game\AGENTS.md；如需重新生成，用 --force（会覆盖同名文件）
-python D:\AI_Project\skills\Personal_Game_Studio_UE\scripts\gamecheck.py init --dir D:\games\my-game --name "我的游戏"
+python D:\AI_Project\skills\Game_Creation_Studio\scripts\gamecheck.py init --dir D:\games\my-game --name "我的游戏"
 ```
 
 **验证安装成功**：
 
 ```powershell
-python D:\AI_Project\skills\Personal_Game_Studio_UE\scripts\gamecheck.py --help
+python D:\AI_Project\skills\Game_Creation_Studio\scripts\gamecheck.py --help
 python --version
 ```
 
-- DSH/Claude Code：新会话里说"用 ue5-solo-game skill 帮我推进项目"，能说出阶段路由即成功。
+- DSH/Claude Code：新会话里说"用 game-creation-studio skill 帮我推进项目"，能说出阶段路由即成功。
 - 任意 agent：能正确执行 `gamecheck.py init` 并在项目里生成 `docs/` 与 `gamecheck.json`。
 
 ### 8.2 升级
 
 | 安装方式 | 升级命令 | 注意 |
 |---|---|---|
-| git clone 后复制进 skills | `cd D:\AI_Project\skills\Personal_Game_Studio_UE` → `git pull` → 先 `Remove-Item -Recurse -Force <目标技能目录>`，再重新执行 8.1 的 `Copy-Item` | 覆盖会替换旧文件；自己改过的文件会丢，先备份；先删目标目录可避免嵌套成 `ue5-solo-game\Personal_Game_Studio_UE` |
+| git clone 后复制进 skills | `cd D:\AI_Project\skills\Game_Creation_Studio` → `git pull` → 先 `Remove-Item -Recurse -Force <目标技能目录>`，再重新执行 8.1 的 `Copy-Item` | 覆盖会替换旧文件；自己改过的文件会丢，先备份；先删目标目录可避免嵌套成 `game-creation-studio\Game_Creation_Studio` |
 | 只用 git clone 的目录 | `git pull` | 最省事 |
 | 下载 ZIP | 下载最新 Release 的 Source code (zip) → 解压覆盖旧目录 | 覆盖前备份自己改过的文件 |
 
 升级后必验：
 
 ```powershell
-cd D:\AI_Project\skills\Personal_Game_Studio_UE
+cd D:\AI_Project\skills\Game_Creation_Studio
 git log --oneline -1
 python -m unittest discover -s tests -v
 python scripts/gamecheck.py --help
@@ -648,7 +648,7 @@ python scripts/gamecheck.py --help
 
 ### 9.1 中文路径与用户名
 
-- **克隆到纯英文路径**（如 `D:\dev\Personal_Game_Studio_UE`）。Git 本身支持中文路径，但 Python 脚本、UE、部分编辑器的工具链在含中文/空格的路径下更易出问题。
+- **克隆到纯英文路径**（如 `D:\dev\Game_Creation_Studio`）。Git 本身支持中文路径，但 Python 脚本、UE、部分编辑器的工具链在含中文/空格的路径下更易出问题。
 - `git status` 显示 `\344\270\255` 转义：`git config --global core.quotepath false`。
 - 本仓库的模板文件名带中文（如 `01_游戏设计文档.md`），这是设计的一部分，**不要改名**——改名要同步改 `gamecheck.py` 与所有引用。
 - 项目路径尽量不用空格；非用不可时命令里加引号：`python "D:\My Game\scripts\gamecheck.py" --help`。
@@ -752,7 +752,7 @@ git remote set-url origin https://github.com/ChenWenhui816/<新仓库名>.git
 git remote -v
 ```
 
-4. 全仓搜旧名并替换：编辑器里搜索 `Personal_Game_Studio_UE`（或旧名），逐个确认；重点看 `README.md` 徽章、`docs/GitHub发布指南.md`、`.github/ISSUE_TEMPLATE/config.yml`。
+4. 全仓搜旧名并替换：编辑器里搜索 `Game_Creation_Studio`（或旧名），逐个确认；重点看 `README.md` 徽章、`docs/GitHub发布指南.md`、`.github/ISSUE_TEMPLATE/config.yml`。
 5. 转移仓库（Settings → General → Danger Zone → Transfer）后，本地地址同样要 `set-url`。
 
 ### 9.10 其他常见提示
@@ -782,7 +782,7 @@ git remote -v
 ### 10.2 首次推送前
 
 - [ ] 远程仓库已创建，且**没勾** README / .gitignore / license
-- [ ] `git remote -v` 指向 `ChenWenhui816/Personal_Game_Studio_UE`
+- [ ] `git remote -v` 指向 `ChenWenhui816/Game_Creation_Studio`
 - [ ] `git branch --show-current` 输出 `main`
 - [ ] 认证方式至少一种可用（浏览器 / PAT / SSH）
 - [ ] 网络能访问 github.com
@@ -813,7 +813,7 @@ git remote -v
 
 | 目的 | 命令 |
 |---|---|
-| 进仓库 | `cd D:\AI_Project\Deepseek\Creat_Game\Personal_Game_Studio_UE` |
+| 进仓库 | `cd D:\AI_Project\Deepseek\Creat_Game\Game_Creation_Studio` |
 | 同步 | `git pull` |
 | 看状态 | `git status` |
 | 跑测试 | `python -m unittest discover -s tests -v` |
@@ -828,7 +828,7 @@ git remote -v
 | 打 tag | `git tag -a v0.1.1 -m "v0.1.1: 一句话"` |
 | 推 tag | `git push origin v0.1.1` |
 | 看 tag | `git tag -l` / `git show v0.1.1 --stat` |
-| 生成 ZIP | `git archive --format=zip --prefix=Personal_Game_Studio_UE/ -o ..\pkg-v0.1.1.zip HEAD` |
+| 生成 ZIP | `git archive --format=zip --prefix=Game_Creation_Studio/ -o ..\pkg-v0.1.1.zip HEAD` |
 | 回滚提交 | `git revert <hash>` → `git push` |
 | 切到某版本 | `git switch --detach v0.1.0` |
 

@@ -4,11 +4,11 @@
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
   <zip-file>
     <pe-file path="*setup.exe"
-             product-name="Personal Game Studio UE"
+             product-name="Game Creation Studio UE"
              product-version="${version}"
              file-version="${version}"
-             company-name="Personal Game Studio"
-             description="Personal Game Studio UE installer">
+             company-name="Game Creation Studio"
+             description="Game Creation Studio UE installer">
       <authenticode-sign />
     </pe-file>
   </zip-file>

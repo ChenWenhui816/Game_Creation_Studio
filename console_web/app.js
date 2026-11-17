@@ -1440,7 +1440,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.9.0', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.9.1', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';
@@ -1550,7 +1550,7 @@ function renderProjectStart() {
     const projects = result[0] || {};
     const state = result[1] || {};
     const recent = (projects.recent || []).filter(Boolean);
-    app.innerHTML = '<header class="topbar start-topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>Game Studio OS</h1><div class="sub">本地游戏工作室 · 一个人也能走完 8 条管线</div></div></div><div class="top-actions">' + pill('v0.9.0', '') + '</div></header>' +
+    app.innerHTML = '<header class="topbar start-topbar"><div class="brand"><img class="logo" src="/static/icon.svg" alt=""><div><h1>Game Creation Studio</h1><div class="sub">本地游戏工作室 · 一个人也能走完 8 条管线</div></div></div><div class="top-actions">' + pill('v0.9.1', '') + '</div></header>' +
       '<main class="main start-main"><section class="start-hero"><div><p class="tag">开始</p><h2>先决定在哪工作</h2><p>打开一个已有工程，或新建一个。控制台不会自动打开上次的测试工程。</p></div></section>' +
       '<div class="start-grid">' +
       '<section class="card start-card"><div class="start-icon">▤</div><h3>打开项目文件夹</h3><p>选择已有工程根目录；控制台会读取 docs/、.gameconsole/ 与阶段状态。</p>' +

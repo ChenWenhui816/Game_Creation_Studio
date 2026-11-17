@@ -1,12 +1,14 @@
-# UE5 单机 3D 闯关游戏 · 制作 Skill
+# Game Creation Studio
+
+> 浏览器优先的 UE5 单机游戏工作室：8 条管线、8 道闸门、agent 交接与本地可视化。
 
 [中文](README.md) ｜ [English](README.en.md)
 
 **把"做游戏"拆成 8 条生产管线、8 道可执行闸门，让 AI agent 按标准干活，你只做三类决策。**
 
-[![CI](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Personal_Game_Studio_UE/actions/workflows/ci.yml)
+[![CI](https://github.com/ChenWenhui816/Game_Creation_Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/ChenWenhui816/Game_Creation_Studio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.9.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.1-blue.svg)](CHANGELOG.md)
 
 ---
 
@@ -28,10 +30,17 @@
 | 常见死法 | 这套流程怎么挡 |
 |---|---|
 | 写了 30 页策划，没有一条能判断合格 | G1：每条标准必须机器可查或人眼 3 秒可判 |
-| 先量产 200 个资产，白模一跑发现玩法不成立 | 白模（P2）先于资产量产（P3） |
+| 先量产 200 个资产，白模一跑发现玩法不成立 | 概念与美术（P3）先于测试与技术（P4） |
 | agent 每周说"完成了"，进游戏不是要的 | 交付单 + 证据 + 每周截图巡览 |
 | 范围越做越大，永远发不了 | 砍功能清单 + 产能核算 + 月度复盘 |
 | 做完才想上线，商店页/资质来不及 | 商店页提前 6 个月，G5 上线清单 |
+
+## v0.9.1 更名为 Game Creation Studio
+
+- 项目名与 GitHub 仓库改为 **Game Creation Studio**；
+- 浏览器版成为主路径，不再需要安装软件；
+- 桌面壳与安装包保留为可选归档，功能全部保留；
+- 管线顺序与文档同步修正。
 
 ## v0.9.0 新增：Agent 写完、流程串联与管线重排
 
@@ -119,7 +128,7 @@
 | 制作总览 | 完成环、闸门/文档统计、阶段时间柱状图 |
 | 制作计时 | 开始/停止计时，按阶段累计 |
 
-## v0.5.0 新增：安装包、自动更新与控制台增强
+## v0.5.0：可选桌面打包与控制台增强（已非主路径）
 
 | 能力 | 入口 | 说明 |
 |---|---|---|
@@ -130,14 +139,14 @@
 | 章节/检查项层级 | 阶段右侧「章节」面板 | 解析 H2/H3 与 checkbox，可跳转、勾选、追加 |
 | 证据墙 | 控制台「证据墙」 | 读取 `docs/evidence/` 的截图/录屏/文件 |
 
-安装包与签名：`docs/安装包与签名.md`；桌面版：`docs/桌面版.md`。
+浏览器版是主路径；安装包/桌面壳只是可选归档，不影响所有控制台功能。签名说明：`docs/安装包与签名.md`；桌面版：`docs/桌面版.md`。
 
-## v0.4.0 新增：桌面版
+## v0.4.0：可选桌面壳
 
 - `scripts/console_app.py`：pywebview/WebView2 桌面窗口；关闭窗口停止本地服务。
-- PyInstaller 打包：`build/desktop.spec` + `build/build_desktop.ps1`，输出 `dist/Personal_Game_Studio_UE/`。
+- PyInstaller 打包：`build/desktop.spec` + `build/build_desktop.ps1`，输出 `dist/Game_Creation_Studio/`。
 - 版本统一在 `scripts/version.py`；UI「检查更新」查 GitHub Releases，只提示不自动覆盖。
-- 桌面首次运行把 skill 释放到 `%LOCALAPPDATA%\Personal_Game_Studio_UE\skill\<版本>`。
+- 桌面首次运行把 skill 释放到 `%LOCALAPPDATA%\Game_Creation_Studio\skill\<版本>`。
 - 构建与更新说明：`docs/桌面版.md`。
 
 ## v0.3.0 新增：本地制作控制台
@@ -179,9 +188,9 @@ flowchart LR
   G1 --> P2[P2 剧本]
   P2 --> G2{G2 剧本可拍}
   G2 --> P3[P3 概念与美术]
-  P3 --> G3{G3 白模可玩}
+  P3 --> G3{G3 概念/美术锁定}
   G3 --> P4[P4 测试与技术]
-  P4 --> G4{G4 风格/管线锁定}
+  P4 --> G4{G4 白模/测试可玩}
   G4 --> P5[P5 音乐与音频]
   P5 --> G5{G5 音频可集成}
   G5 --> P6[P6 内容生产]
@@ -193,44 +202,51 @@ flowchart LR
 | 管线 | 核心产出 | 闸门 |
 |---|---|---|
 | P0 立项 | 一页纸立项书、范围、风险 | G0 可复述 |
-| P1 标准 | GDD / 美术圣经 / 技术方案 / 资产清单 / 数值表 | G1 可判定 |
+| P1 标准 | GDD / 技术方案 / 数值表 | G1 可判定 |
 | P2 剧本 | 剧本圣经、场景/镜头/台词/配音 ID | G2 可拍 |
 | P3 概念与美术 | 概念/风格/色板 + 资产清单 | G3 概念/美术锁定 |
 | P4 测试与技术 | 白模、性能、输入、存档与测试记录 | G4 白模/测试可玩 |
 | P5 音乐与音频 | 主题/stems、音效、配音、混音、集成 | G5 音频可集成 |
-| P6 内容生产 | 全部关卡/敌人/剧情/收集 | G6 全流程通关 |
-| P7 上线与发行 | 打包/认证/商店/PV/多语言 | G7 上线清单 |
+| P6 内容生产与视频 | 全部关卡/敌人/剧情/收集 + PV | G6 全流程通关 + PV |
+| P7 上线与发行 | 打包/认证/商店/多语言 | G7 上线清单 |
 
 > 详细步骤、输入输出、交接与常见错误见 `docs/管线/`；每管线都有 README + SKILL.md（中文为主，英文摘要）。
 
 ## 5 分钟上手
 
-### 方式 A：可视化控制台（推荐）
+### 方式 A：浏览器版（推荐，不需要安装包）
 
 ```powershell
-git clone https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git
-cd Personal_Game_Studio_UE
+git clone https://github.com/ChenWenhui816/Game_Creation_Studio.git
+cd Game_Creation_Studio
+.\start.cmd
+```
+
+或直接：
+
+```powershell
 python scripts/gameconsole.py serve
 ```
 
-浏览器打开日志里的地址（默认 <http://127.0.0.1:8765/>），按“新建项目”向导填写想法、选工程目录，创建后自动进入 P0 面板。
+浏览器会自动打开 <http://127.0.0.1:8765/>。
+你只需要浏览器、Python 3.10+ 和 DSH/mcp；**不需要 Inno Setup 安装包**。
 
 ### 方式 B：命令行
 
 ```bash
 # 1. 拿到 skill（clone 或下载 release）
-git clone https://github.com/ChenWenhui816/Personal_Game_Studio_UE.git
+git clone https://github.com/ChenWenhui816/Game_Creation_Studio.git
 
 # 2. 生成一个新游戏项目骨架
-python Personal_Game_Studio_UE/scripts/gamecheck.py init --dir D:\games\my-game --name "我的游戏"
+python Game_Creation_Studio/scripts/gamecheck.py init --dir D:\games\my-game --name "我的游戏"
 
 # 3. 填立项书（8 节，一页纸），然后过 G0
-python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D:\games\my-game
+python Game_Creation_Studio/scripts/gamecheck.py doc check --stage 0 --root D:\games\my-game
 ```
 
 把项目目录交给 agent，并说一句：
 
-> 读 `Personal_Game_Studio_UE/SKILL.md`，按阶段推进我的项目；每次任务交交付单并附证据。
+> 读 `Game_Creation_Studio/SKILL.md`，按阶段推进我的项目；每次任务交交付单并附证据。
 
 `init` 会把 18 份模板、`scripts/gamecheck.py` 与 `store/` 目录一起复制进项目。之后在项目根直接用 `python scripts/gamecheck.py <子命令> --root .` 即可，不依赖 skill 的安装路径。
 
@@ -238,8 +254,8 @@ python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D
 
 | 环境 | 做法 |
 |---|---|
-| **DSH** | 把整个 `Personal_Game_Studio_UE/` 放进你的 profile 技能目录；游戏项目根使用 `init` 生成的 `AGENTS.md`（已指向 skill），不要用仓库根的维护规则 |
-| **Claude Code** | 复制到 `~/.claude/skills/ue5-solo-game/`（全局）或 `<项目>/.claude/skills/ue5-solo-game/` |
+| **DSH** | 把整个 `Game_Creation_Studio/` 放进你的 profile 技能目录；游戏项目根使用 `init` 生成的 `AGENTS.md`（已指向 skill），不要用仓库根的维护规则 |
+| **Claude Code** | 复制到 `~/.claude/skills/game-creation-studio/`（全局）或 `<项目>/.claude/skills/game-creation-studio/` |
 | **Codex / Cursor / Gemini CLI** | 把 `AGENTS.md` 放到项目根；让 agent 读 `SKILL.md` 路由 |
 | **任意 agent** | 只要会读 Markdown、会执行命令即可；skill 是外壳，`scripts/gamecheck.py` 是主体 |
 
@@ -276,7 +292,7 @@ Free code signing provided by [SignPath.io](https://signpath.io), certificate by
 ## 目录结构
 
 ```
-Personal_Game_Studio_UE/
+Game_Creation_Studio/
 ├─ SKILL.md                  # 技能入口：阶段路由 + 铁律 + 命令
 ├─ README.md                 # 你正在读的文件
 ├─ AGENTS.md                 # 给 Codex/DSH 等自动读取的仓库规则
@@ -345,7 +361,7 @@ Personal_Game_Studio_UE/
 
 ## 版本与迭代
 
-- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.9.0`，接口与文件结构可能调整。
+- 版本遵循 [SemVer](https://semver.org/lang/zh-CN/)；当前 `v0.9.1`，接口与文件结构可能调整。
 - 变更记录见 [CHANGELOG.md](CHANGELOG.md)。
 - 迭代方式、发布流程、如何让使用者升级：见 [docs/GitHub发布指南.md](docs/GitHub发布指南.md)。
 - 新增/修改流程时，必须同步更新：`SKILL.md` 路由、对应 `references/`、`templates/`、`scripts/gamecheck.py` 的规则、单元测试与 CHANGELOG。

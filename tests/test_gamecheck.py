@@ -696,7 +696,7 @@ class SpecConsistencyTests(unittest.TestCase):
         frontmatter = text.split("---", 2)[1]
         self.assertIn("name:", frontmatter)
         self.assertIn("description:", frontmatter)
-        self.assertIn("ue5-solo-game", frontmatter)
+        self.assertIn("game-creation-studio", frontmatter)
 
     def test_required_sections_match_spec_anchors(self):
         self.assertIn("结论", REQ["08_验收单.md"])

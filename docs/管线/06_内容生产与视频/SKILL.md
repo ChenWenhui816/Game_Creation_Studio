@@ -6,7 +6,7 @@ inputs: 白模 | 资产库 | 剧本/任务 | 音频
 outputs: 全部关卡 | 敌人/Boss/收集 | 剧情/任务/UI | docs/17_视频PV制作单.md | 周报
 gates: G6 全流程通关 + PV
 owner: studio
-version: 0.9.0
+version: 0.9.1
 ---
 
 # 06 · 内容生产与视频 · Agent Contract

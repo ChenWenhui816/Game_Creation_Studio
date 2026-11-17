@@ -6,7 +6,7 @@ inputs: user request, project files, current stage, engine version
 outputs: pipeline id, docs to load, gate to run, next action
 gates: maps to G0–G7
 owner: producer
-version: 0.9.0
+version: 0.9.1
 ---
 
 # Studio Router / 工作室路由器

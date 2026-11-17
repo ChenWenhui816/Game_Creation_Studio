@@ -1,5 +1,5 @@
 ---
-name: ue5-solo-game
+name: game-creation-studio
 description: Production controller for a solo UE5 studio (bilingual entry, local visual console, 8 pipelines). Covers concept, standards, script/narrative, whitebox/tech, art/video, music/audio, content production, release/publishing. Use it for UE 5.8 development, AI art/video/audio pipelines, MCP tool bus, dual keyboard+gamepad input, screenshots, testing/packaging and Steam/console release.
 ---
 

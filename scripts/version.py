@@ -11,11 +11,11 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.9.0"
-SKILL_NAME = "ue5-solo-game"
-APP_NAME = "Personal_Game_Studio_UE"
+VERSION = "0.9.1"
+SKILL_NAME = "game-creation-studio"
+APP_NAME = "Game_Creation_Studio"
 REPO_OWNER = "ChenWenhui816"
-REPO_NAME = "Personal_Game_Studio_UE"
+REPO_NAME = "Game_Creation_Studio"
 REPO_URL = "https://github.com/%s/%s" % (REPO_OWNER, REPO_NAME)
 RELEASES_URL = REPO_URL + "/releases"
 LATEST_RELEASE_API = "https://api.github.com/repos/%s/%s/releases/latest" % (REPO_OWNER, REPO_NAME)
@@ -39,7 +39,7 @@ def check_latest(timeout: float = 8.0) -> dict:
     """查询 GitHub 最新 release；失败时返回 ok=False，不影响本地使用。"""
     request = urllib.request.Request(
         LATEST_RELEASE_API,
-        headers={"User-Agent": "Personal_Game_Studio_UE/" + VERSION,
+        headers={"User-Agent": "Game_Creation_Studio/" + VERSION,
                  "Accept": "application/vnd.github+json"},
     )
     try:

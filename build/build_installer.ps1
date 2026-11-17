@@ -1,4 +1,4 @@
-﻿﻿# 构建 Inno Setup 安装包（可先签名 exe）
+﻿﻿﻿# 构建 Inno Setup 安装包（可先签名 exe）
 param([string]$Version = "")
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -7,8 +7,8 @@ if (-not $Version) {
     $line = Get-Content scripts/version.py | Select-String 'VERSION =' | Select-Object -First 1
     $Version = $line.Line.Split('"')[1]
 }
-$dist = Join-Path $root "dist/Personal_Game_Studio_UE"
-$exe = Join-Path $dist "Personal_Game_Studio_UE.exe"
+$dist = Join-Path $root "dist/Game_Creation_Studio"
+$exe = Join-Path $dist "Game_Creation_Studio.exe"
 if (-not (Test-Path $exe)) {
     throw "先构建桌面版：python -m PyInstaller --noconfirm --clean build/desktop.spec"
 }
@@ -32,7 +32,7 @@ $iscc = Find-Iscc
 if (-not $iscc) { throw "找不到 Inno Setup 6 的 ISCC.exe；请安装 Inno Setup 6 或 choco install innosetup" }
 & $iscc "/DAppVersion=$Version" "build\installer.iss"
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup 编译失败" }
-$setup = Join-Path $root "dist/Personal_Game_Studio_UE-$Version-setup.exe"
+$setup = Join-Path $root "dist/Game_Creation_Studio-$Version-setup.exe"
 if (-not (Test-Path $setup)) { throw "安装包未生成：$setup" }
 & (Join-Path $PSScriptRoot "sign.ps1") -Files $setup
 Write-Host "==> 完成：$setup" -ForegroundColor Green

@@ -157,7 +157,7 @@ class HttpTests(ConsoleBase):
     def test_static_index(self):
         with urllib.request.urlopen("http://127.0.0.1:%d/" % self.port, timeout=20) as resp:
             self.assertEqual(resp.status, 200)
-            self.assertIn(b"ue5-solo-game", resp.read())
+            self.assertIn(b"game-creation-studio", resp.read())
 
     def test_wizard_create(self):
         server = gameconsole.ConsoleServer(("127.0.0.1", 0), None)

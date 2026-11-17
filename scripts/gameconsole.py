@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-r"""gameconsole.py — ue5-solo-game 本地制作控制台（v0.9.0）。
+r"""gameconsole.py — game-creation-studio 本地制作控制台（v0.9.1）。
 
 零第三方依赖的本地 Web 控制台，把 skill 的 8 条管线、闸门、交付单
 变成可点击的状态机；项目文件仍然是本地文件，控制台只维护状态、版本与快照。
@@ -58,7 +58,7 @@ try:
 except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
-CONSOLE_VERSION = _version.VERSION if _version else "0.9.0"
+CONSOLE_VERSION = _version.VERSION if _version else "0.9.1"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -1778,7 +1778,7 @@ def serve(project_path=None, host="127.0.0.1", port=8765, open_browser=True):
         raise ConsoleError("端口 %d-%d 都被占用" % (port, port + 19), 500)
     url = "http://%s:%d/" % (host, chosen)
     print("=" * 62)
-    print("  ue5-solo-game 制作控制台 v%s" % CONSOLE_VERSION)
+    print("  game-creation-studio 制作控制台 v%s" % CONSOLE_VERSION)
     print("  项目：%s" % (project.root if project else "尚未创建（进入新建向导）"))
     print("  地址：%s" % url)
     print("  退出：Ctrl+C")
@@ -1858,7 +1858,7 @@ def cmd_handoff(args):
 def build_parser():
     parser = argparse.ArgumentParser(
         prog="gameconsole.py",
-        description="ue5-solo-game 本地制作控制台（零依赖，只监听本机）。")
+        description="game-creation-studio 本地制作控制台（零依赖，只监听本机）。")
     parser.add_argument("--version", action="version", version=CONSOLE_VERSION)
     sub = parser.add_subparsers(dest="cmd", required=True)
 

@@ -1,5 +1,5 @@
 ---
-name: ue5-solo-game
+name: game-creation-studio
 description: UE5 单角色单机 3D 闯关游戏的个人工作室制作总控（中英双语入口）。覆盖 8 条管线：立项、标准、剧本、概念与美术、测试与技术、音乐与音频、内容生产与视频、上线发行。用于 UE 5.8 开发、AI 美术/视频/音频管线、MCP 工具总线、键鼠+手柄双输入、关卡制作、截图巡览、测试打包、Steam/主机 Demo 上线与版本迭代。按管线路由到 references / docs/管线，并用 scripts/gamecheck.py 跑闸门。
 
 > English entry: [SKILL.en.md](SKILL.en.md) ｜ 中文入口：本文件

@@ -6,8 +6,8 @@ r"""桌面入口：本地服务 + pywebview/WebView2 窗口。
     python scripts/console_app.py --project D:\games\my-game
 
 打包后：
-    Personal_Game_Studio_UE.exe
-    Personal_Game_Studio_UE.exe --project D:\games\my-game
+    Game_Creation_Studio.exe
+    Game_Creation_Studio.exe --project D:\games\my-game
 
 无窗口调试：
     python scripts/console_app.py --serve-only
