@@ -59,6 +59,7 @@ except ImportError:  # pragma: no cover - 单文件运行时
     _version = None
 
 CONSOLE_VERSION = _version.VERSION if _version else "0.9.1"
+APP_NAME = _version.APP_NAME if _version else "Game_Creation_Studio"
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_ROOT / "templates"
 GAMECHECK = SKILL_ROOT / "scripts" / "gamecheck.py"
@@ -1756,6 +1757,49 @@ def list_fs(raw: str) -> dict:
     return {"path": str(path), "parent": parent, "dirs": children}
 
 
+
+def _browser_settings_dir() -> Path:
+    base = os.environ.get("LOCALAPPDATA") or str(Path.home() / "AppData" / "Local")
+    return Path(base) / APP_NAME
+
+
+def _load_recent_projects() -> list:
+    candidates = [_browser_settings_dir() / "settings.json"]
+    base = Path(os.environ.get("LOCALAPPDATA") or (Path.home() / "AppData" / "Local"))
+    candidates.append(base / "Personal_Game_Studio_UE" / "settings.json")
+    for path in candidates:
+        try:
+            data = read_json(path, {})
+        except Exception:
+            data = {}
+        if not isinstance(data, dict):
+            continue
+        recent = list(data.get("recent_projects") or [])
+        last = data.get("last_project")
+        if last and last not in recent:
+            recent.insert(0, last)
+        recent = [item for item in recent if (Path(item) / ".gameconsole" / "state.json").is_file()]
+        if recent:
+            return recent[:8]
+    return []
+
+
+def _remember_project(project) -> None:
+    try:
+        folder = _browser_settings_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / "settings.json"
+        data = read_json(path, {})
+        if not isinstance(data, dict):
+            data = {}
+        recent = [item for item in data.get("recent_projects", []) if item != str(project.root)]
+        recent.insert(0, str(project.root))
+        data["recent_projects"] = recent[:8]
+        data["last_project"] = str(project.root)
+        write_json(path, data)
+    except Exception:  # noqa: BLE001
+        pass
+
 def serve(project_path=None, host="127.0.0.1", port=8765, open_browser=True):
     project = None
     if project_path:
@@ -1776,6 +1820,8 @@ def serve(project_path=None, host="127.0.0.1", port=8765, open_browser=True):
             continue
     if server is None:
         raise ConsoleError("端口 %d-%d 都被占用" % (port, port + 19), 500)
+    server.on_project_open = _remember_project
+    server.recent_projects = _load_recent_projects()
     url = "http://%s:%d/" % (host, chosen)
     print("=" * 62)
     print("  game-creation-studio 制作控制台 v%s" % CONSOLE_VERSION)
