@@ -88,4 +88,6 @@ Secret：
 - 每次 release 需要人工批准；
 - SmartScreen 信誉仍需下载量积累，但不再是未知发布者；
 - 申请审核需要时间，通常不是当天；
-- 不想上架 Microsoft Store 的情况下，这是免费公共可信签名的主要路径。
+- SignPath 可能关注项目的公开使用/维护声誉；新仓库没有 star/用户时可能被要求补充材料或被拒；
+- 若被拒：自签名仅本机可用，公共免费路径改为 Microsoft Store MSIX（商店重签）；
+- 不想上架 Microsoft Store 的情况下，SignPath 是免费公共可信签名的主要路径。
