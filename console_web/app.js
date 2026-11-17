@@ -16,6 +16,7 @@ const S = {
   wizard: null,
   updateChecked: false,
   fillOpen: true,
+  liveEditable: false,
   time: null,
   clockTimer: null,
 };
@@ -190,6 +191,204 @@ function mdToHtml(markdown) {
     out.push('<p>' + inlineMd(buf.join(' ')) + '</p>');
   }
   return out.join('\n');
+}
+
+
+/* ---------------- Direct preview editing ---------------- */
+
+function parseMdBlocks(lines) {
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (!lines[i].trim()) { i++; continue; }
+    const start = i;
+    if (/^\x60\x60\x60/.test(lines[i])) {
+      i++;
+      while (i < lines.length && !/^\x60\x60\x60/.test(lines[i])) i++;
+      if (i < lines.length) i++;
+      blocks.push({ type: 'code', start: start, end: i });
+      continue;
+    }
+    const heading = lines[i].match(/^(#{1,6})\s+(.*)$/);
+    if (heading) {
+      blocks.push({ type: 'heading', start: start, end: i + 1, level: heading[1].length });
+      i++;
+      continue;
+    }
+    if (/^\s*>\s?/.test(lines[i])) {
+      i++;
+      while (i < lines.length && /^\s*>\s?/.test(lines[i])) i++;
+      blocks.push({ type: 'quote', start: start, end: i });
+      continue;
+    }
+    if (/^\s*\|/.test(lines[i]) && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) {
+      i += 2;
+      while (i < lines.length && /^\s*\|/.test(lines[i])) i++;
+      blocks.push({ type: 'table', start: start, end: i });
+      continue;
+    }
+    if (/^\s*[-*]\s+/.test(lines[i])) {
+      i++;
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) i++;
+      blocks.push({ type: 'ul', start: start, end: i });
+      continue;
+    }
+    if (/^\s*\d+\.\s+/.test(lines[i])) {
+      i++;
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) i++;
+      blocks.push({ type: 'ol', start: start, end: i });
+      continue;
+    }
+    if (/^\s*(---|\*\*\*|___)\s*$/.test(lines[i])) {
+      blocks.push({ type: 'hr', start: start, end: i + 1 });
+      i++;
+      continue;
+    }
+    i++;
+    while (i < lines.length && !/^\s*$/.test(lines[i]) &&
+           !/^(#{1,6}\s|\x60\x60\x60|\s*\|)/.test(lines[i]) &&
+           !/^\s*([-*]|\d+\.)\s+/.test(lines[i]) &&
+           !/^\s*>/.test(lines[i])) i++;
+    blocks.push({ type: 'p', start: start, end: i });
+  }
+  return blocks;
+}
+
+function editableBlockHtml(block, lines) {
+  const attrs = ' data-block-start="' + block.start + '" data-block-end="' + block.end +
+    '" data-block-type="' + block.type + '"';
+  const raw = lines.slice(block.start, block.end);
+  if (block.type === 'code') {
+    return '<pre' + attrs + ' class="md-readonly"><code>' + esc(raw.slice(1, -1).join('\n')) + '</code></pre>';
+  }
+  if (block.type === 'heading') {
+    const level = block.level;
+    return '<h' + level + attrs + ' class="md-locked">' + inlineMd(raw[0].replace(/^#{1,6}\s+/, '')) + '</h' + level + '>';
+  }
+  if (block.type === 'hr') return '<hr' + attrs + ' class="md-readonly">';
+  if (block.type === 'quote') {
+    const text = raw.map(function (line) { return line.replace(/^\s*>\s?/, ''); }).join(' ');
+    return '<blockquote' + attrs + ' class="md-live" contenteditable="true" spellcheck="false">' + inlineMd(text) + '</blockquote>';
+  }
+  if (block.type === 'table') {
+    const rows = raw.map(function (line) {
+      return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(function (cell) { return cell.trim(); });
+    });
+    let html = '<div' + attrs + ' class="md-table-wrap md-live" data-table-sep="' + esc(raw[1] || '|---|') + '"><table><thead><tr>';
+    html += rows[0].map(function (cell) { return '<th contenteditable="true" spellcheck="false">' + inlineMd(cell) + '</th>'; }).join('');
+    html += '</tr></thead><tbody>';
+    for (let r = 2; r < rows.length; r++) {
+      html += '<tr>' + rows[r].map(function (cell) { return '<td contenteditable="true" spellcheck="false">' + inlineMd(cell) + '</td>'; }).join('') + '</tr>';
+    }
+    return html + '</tbody></table></div>';
+  }
+  if (block.type === 'ul' || block.type === 'ol') {
+    const tag = block.type;
+    const items = raw.map(function (line) {
+      const text = line.replace(block.type === 'ul' ? /^\s*[-*]\s+/ : /^\s*\d+\.\s+/, '');
+      return '<li contenteditable="true" spellcheck="false">' + inlineMd(text) + '</li>';
+    }).join('');
+    return '<' + tag + attrs + ' class="md-live">' + items + '</' + tag + '>';
+  }
+  return '<p' + attrs + ' class="md-live" contenteditable="true" spellcheck="false">' + inlineMd(raw.join(' ')) + '</p>';
+}
+
+function editablePreviewHtml(markdown) {
+  const lines = String(markdown || '').replace(/\r\n/g, '\n').split('\n');
+  return parseMdBlocks(lines).map(function (block) { return editableBlockHtml(block, lines); }).join('\n');
+}
+
+function inlineMdFromDom(node) {
+  let out = '';
+  node.childNodes.forEach(function (child) {
+    if (child.nodeType === 3) { out += child.nodeValue; return; }
+    if (child.nodeType !== 1) return;
+    const tag = child.tagName.toLowerCase();
+    if (tag === 'br') { out += ' '; return; }
+    if (tag === 'strong' || tag === 'b') { out += '**' + inlineMdFromDom(child) + '**'; return; }
+    if (tag === 'em' || tag === 'i') { out += '*' + inlineMdFromDom(child) + '*'; return; }
+    if (tag === 'code') { out += '\x60' + child.textContent + '\x60'; return; }
+    if (tag === 'a') { out += '[' + inlineMdFromDom(child) + '](' + child.getAttribute('href') + ')'; return; }
+    out += inlineMdFromDom(child);
+  });
+  return out.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function serializePreviewBlock(block) {
+  const type = block.getAttribute('data-block-type');
+  const tableSep = block.getAttribute('data-table-sep') || '|---|';
+  if (type === 'table') {
+    const table = block.querySelector('table');
+    if (!table) return '';
+    const lines = [];
+    Array.from(table.rows).forEach(function (row, index) {
+      lines.push('| ' + Array.from(row.cells).map(function (cell) { return inlineMdFromDom(cell); }).join(' | ') + ' |');
+      if (index === 0) lines.push(tableSep);
+    });
+    return lines.join('\n');
+  }
+  if (type === 'ul' || type === 'ol') {
+    return Array.from(block.querySelectorAll('li')).map(function (item) {
+      return (type === 'ul' ? '- ' : '1. ') + inlineMdFromDom(item);
+    }).join('\n');
+  }
+  if (type === 'quote') {
+    return inlineMdFromDom(block).split(/\s*\n\s*/).map(function (line) { return '> ' + line; }).join('\n');
+  }
+  return inlineMdFromDom(block);
+}
+
+function commitPreviewBlock(el) {
+  const editor = document.getElementById('editor');
+  const block = el && el.closest ? el.closest('[data-block-start]') : null;
+  const type = block ? block.getAttribute('data-block-type') : '';
+  if (!editor || editor.disabled || !block) return false;
+  const start = parseInt(block.getAttribute('data-block-start'), 10);
+  const end = parseInt(block.getAttribute('data-block-end'), 10);
+  if (!isFinite(start) || !isFinite(end) || start < 0) return false;
+  const newText = serializePreviewBlock(block);
+  const lines = editor.value.replace(/\r\n/g, '\n').split('\n');
+  if (!newText && type !== 'p' && type !== 'quote') return false;
+  const newLines = newText ? newText.split('\n') : [];
+  editor.value = lines.slice(0, start).concat(newLines, lines.slice(end)).join('\n');
+  S.dirty = true;
+  const sub = document.getElementById('doc-sub');
+  if (sub) sub.textContent = '已同步到 Markdown · 点保存生成版本';
+  renderOutline(editor.value);
+  renderFillPanel(editor.value, false);
+  return true;
+}
+
+function renderPreview(content, locked) {
+  const preview = document.getElementById('preview');
+  if (!preview) return;
+  const canEdit = !!S.liveEditable && !locked;
+  const hint = canEdit
+    ? '<div class="preview-hint">预览可直接编辑；标题 / 代码 / 冻结内容只读。失焦后自动写回 Markdown。</div>'
+    : (locked ? '<div class="preview-hint">已冻结：全文只读。</div>' : '');
+  preview.classList.toggle('live', canEdit);
+  preview.innerHTML = hint + (canEdit ? editablePreviewHtml(content) : mdToHtml(content));
+}
+
+function bindPreviewEditing() {
+  const preview = document.getElementById('preview');
+  if (!preview || preview.dataset.liveBound) return;
+  preview.dataset.liveBound = '1';
+  preview.addEventListener('input', function (event) {
+    if (event.target && event.target.isContentEditable) {
+      S.dirty = true;
+      const sub = document.getElementById('doc-sub');
+      if (sub) sub.textContent = '预览修改中 · 失焦后同步到 Markdown';
+    }
+  });
+  preview.addEventListener('focusout', function (event) {
+    const block = event.target && event.target.closest ? event.target.closest('[data-block-start]') : null;
+    if (!block) return;
+    if (event.relatedTarget && block.contains(event.relatedTarget)) return;
+    const editor = document.getElementById('editor');
+    if (!editor || editor.disabled) return;
+    if (commitPreviewBlock(block)) renderPreview(editor.value, false);
+  });
 }
 
 /* ---------------- Shell ---------------- */
@@ -512,7 +711,7 @@ function reorderSection(from, to) {
   editor.value = prefix.concat.apply(prefix, sections).join('\n');
   S.dirty = true;
   const preview = document.getElementById('preview');
-  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  if (preview) renderPreview(editor.value, editor.disabled);
   renderOutline(editor.value);
   toast('章节顺序已调整，保存后写入版本');
 }
@@ -539,7 +738,7 @@ function toggleCheckLine(index) {
   editor.value = lines.join('\n');
   S.dirty = true;
   const preview = document.getElementById('preview');
-  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  if (preview) renderPreview(editor.value, editor.disabled);
   renderOutline(editor.value);
 }
 
@@ -551,7 +750,7 @@ function addSection() {
   editor.value = editor.value.replace(/\s*$/, '') + '\n\n## ' + title.trim() + '\n\n';
   S.dirty = true;
   const preview = document.getElementById('preview');
-  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  if (preview) renderPreview(editor.value, editor.disabled);
   renderOutline(editor.value);
   toast('已追加章节，保存后写入版本');
 }
@@ -564,7 +763,7 @@ function addCheckItem() {
   editor.value = editor.value.replace(/\s*$/, '') + '\n- [ ] ' + text.trim() + '\n';
   S.dirty = true;
   const preview = document.getElementById('preview');
-  if (preview) preview.innerHTML = mdToHtml(editor.value);
+  if (preview) renderPreview(editor.value, editor.disabled);
   renderOutline(editor.value);
   toast('已追加检查项，保存后写入版本');
 }
@@ -692,6 +891,7 @@ function renderStagePage() {
   document.getElementById('btn-next').addEventListener('click', nextStage);
   document.getElementById('btn-preview').addEventListener('click', togglePreview);
   document.getElementById('btn-fields').addEventListener('click', toggleFillPanel);
+  bindPreviewEditing();
   document.getElementById('btn-add-section').addEventListener('click', addSection);
   document.getElementById('btn-add-check').addEventListener('click', addCheckItem);
   loadStageInsight(stage.stage.id);
@@ -802,7 +1002,9 @@ function openArtifact(path) {
     if (saveBtn) saveBtn.disabled = editor.disabled;
     title.textContent = path.replace('docs/', '');
     sub.textContent = info.locked ? '已冻结 · 需变更单' : (info.exists ? '可编辑 · 保存会生成版本' : '尚未创建');
-    preview.innerHTML = mdToHtml(editor.value);
+    S.liveEditable = /\.md$/i.test(path) && !info.locked;
+    bindPreviewEditing();
+    renderPreview(editor.value, info.locked);
     renderFillPanel(editor.value, info.locked);
     renderOutline(editor.value);
     document.querySelectorAll('[data-path]').forEach(function (button) {
@@ -811,7 +1013,7 @@ function openArtifact(path) {
     renderVersions(info.versions || []);
     editor.oninput = function () {
       S.dirty = true;
-      preview.innerHTML = mdToHtml(editor.value);
+      renderPreview(editor.value, editor.disabled);
       renderOutline(editor.value);
       sub.textContent = '未保存修改';
     };
@@ -839,6 +1041,8 @@ function renderVersions(versions) {
 function saveArtifact() {
   const editor = document.getElementById('editor');
   if (!editor || editor.disabled) return;
+  const active = document.activeElement;
+  if (active && active.isContentEditable) active.blur();
   api('/api/save', { method: 'POST', body: {
     path: S.selected, content: editor.value,
     expected_hash: S.artifact ? S.artifact.hash : null, note: 'manual-save'
@@ -916,7 +1120,7 @@ function renderFillPanel(content, locked) {
       editor.value = updated;
       S.dirty = true;
       const preview = document.getElementById('preview');
-      if (preview) preview.innerHTML = mdToHtml(editor.value);
+      renderPreview(editor.value, false);
       renderOutline(editor.value);
       renderFillPanel(editor.value, false);
       toast('已填入字段，保存后写入版本');
@@ -924,6 +1128,8 @@ function renderFillPanel(content, locked) {
   });
 }
 function togglePreview() {
+  const active = document.activeElement;
+  if (active && active.isContentEditable) active.blur();
   S.preview = !S.preview;
   const body = document.getElementById('editor-body');
   const preview = document.getElementById('preview');
@@ -1063,7 +1269,7 @@ function renderWizard() {
     step: 1, name: '', idea: '', path: '', platform: 'Windows PC（Steam Demo），1080p 60 fps',
     scale: '小', engine: '5.8', browsePath: ''
   };
-  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.7.4', '') +
+  app.innerHTML = '<header class="topbar"><div class="brand"><div class="logo">GF</div><div><h1>制作控制台</h1><div class="sub">从一句话到本地工程</div></div></div><div class="top-actions">' + pill('v0.7.5', '') +
     (S.state && S.state.project ? '<button class="btn" id="w-back-project">返回当前项目</button>' : '') + '</div></header>' +
     '<main class="main"><div class="wizard"><div class="card" style="padding:22px"><div class="steps"><span class="step active">1 想法</span><span class="step">2 工程路径</span><span class="step">3 创建</span></div>' +
     '<div id="wizard-body"></div></div></div></main>';

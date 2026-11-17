@@ -321,3 +321,13 @@ h1.md-locked, h2.md-locked, h3.md-locked { border-left: 2px solid rgba(139,155,1
 @media (max-width: 1100px) { .fill-list { grid-template-columns: 1fr; } }
 
 .handoff-prompt { width: 100%; min-height: 260px; background: #070a10; border: 1px solid rgba(94,234,212,.25); border-radius: 10px; color: var(--text); padding: 10px; font-family: "Cascadia Code", Consolas, monospace; font-size: 11px; line-height: 1.6; resize: vertical; }
+
+/* direct preview editing */
+.preview-hint { color: var(--muted); font-size: 11px; border: 1px dashed rgba(94,234,212,.25); background: rgba(94,234,212,.04); border-radius: 8px; padding: 6px 9px; margin-bottom: 10px; }
+.preview.live [contenteditable="true"] { border-radius: 4px; transition: background .15s, box-shadow .15s; }
+.preview.live [contenteditable="true"]:hover { background: rgba(94,234,212,.06); }
+.preview.live [contenteditable="true"]:focus { outline: none; background: rgba(94,234,212,.10); box-shadow: 0 0 0 1px rgba(94,234,212,.45); }
+.preview.live table [contenteditable="true"] { min-width: 24px; }
+.preview.live .md-table-wrap { overflow-x: auto; }
+.preview.live .md-readonly { opacity: .85; }
+.preview.live h1, .preview.live h2, .preview.live h3, .preview.live h4 { cursor: default; }

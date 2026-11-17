@@ -11,7 +11,7 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-VERSION = "0.7.4"
+VERSION = "0.7.5"
 SKILL_NAME = "ue5-solo-game"
 APP_NAME = "Personal_Game_Studio_UE"
 REPO_OWNER = "ChenWenhui816"
