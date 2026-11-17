@@ -245,6 +245,12 @@ python Personal_Game_Studio_UE/scripts/gamecheck.py doc check --stage 0 --root D
 
 > 升级：`git pull` 或重新下载 Release；想锁版本就切到对应 tag（`git checkout v0.9.0`）。
 
+## 代码签名 / Code signing
+
+Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org/).
+
+签名政策：[CODE_SIGNING.md](CODE_SIGNING.md)（Authors / Reviewers / Approvers：ChenWenhui816）。
+
 ## 命令速查
 
 | 命令 | 作用 | 何时 |
